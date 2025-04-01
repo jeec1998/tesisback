@@ -4,16 +4,26 @@ import { Model } from 'mongoose';
 import { User, UserDocument } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { AuthService } from '../auth/auth.service';
+
+
+
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>,
+  private authService: AuthService,) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const createdUser = new this.userModel(createUserDto);
+    const hashedPassword = await this.authService.hashPassword(createUserDto.password);
+  
+    const createdUser = new this.userModel({
+      ...createUserDto,
+      password: hashedPassword,
+    });
+  
     return createdUser.save();
   }
-
   findAll(): Promise<User[]> {
     return this.userModel.find().exec();
   }
@@ -28,6 +38,9 @@ export class UsersService {
   
   remove(id: string): Promise<User | null> {
     return this.userModel.findByIdAndDelete(id).exec();
+  }
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userModel.findOne({ email }).exec();
   }
   
 }
