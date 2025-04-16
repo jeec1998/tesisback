@@ -1,29 +1,26 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { TopicsService } from './topics.service'; 
+import {
+  Controller,
+  Post,
+  Body,
+  Req,
+  UseGuards,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { TopicsService } from './topics.service';
 import { CreateTopicDto } from './dto/create-topic.dto';
-import { UpdateTopicDto } from './dto/update-topic.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('topics')
 export class TopicsController {
   constructor(private readonly topicsService: TopicsService) {}
 
+  @UseGuards(AuthGuard('jwt')) // ✅ Solo autenticación
   @Post()
-  create(@Body() createTopicDto: CreateTopicDto) {
-    return this.topicsService.create(createTopicDto);
-  }
+  create(@Body() createTopicDto: CreateTopicDto, @Req() req: any) {
+    if (!req.user || !req.user._id) {
+      throw new UnauthorizedException('Usuario no autenticado');
+    }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.topicsService.findOne(id); 
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTopicDto: UpdateTopicDto) {
-    return this.topicsService.update(id, updateTopicDto); 
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.topicsService.remove(id);
+    return this.topicsService.create(createTopicDto, req.user._id);
   }
 }

@@ -1,41 +1,59 @@
-import { Controller, Get, Post, Body, Param, Delete, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Put,
+  UseGuards,
+  Request,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UnauthorizedException } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service';
-import { UseGuards, Request } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService,
+  constructor(
+    private readonly usersService: UsersService,
     private readonly authService: AuthService,
   ) {}
+
   @Post('login')
   async login(@Body() body: { email: string; password: string }) {
     const user = await this.usersService.findByEmail(body.email);
     if (!user || !(await this.authService.comparePasswords(body.password, user.password))) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
-  
-    const accessToken = await this.authService.generateToken({ email: user.email });
-  
+    const accessToken = await this.authService.generateToken({
+      _id: (user as any)._id,
+      email: user.email,
+      role: user.role,
+    });
+    
+
     return {
       accessToken,
     };
   }
+
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
-  @UseGuards(AuthGuard('jwt'))
-  @Get('perfil')
-  async getPerfil(@Request() req) {
-    const user = await this.usersService.findByEmail(req.user.email);
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  obtenerPerfil(@Request() req) {
     return {
-      user,
+      usuario: req.user,
     };
-}
+  }
+
   @Get()
   findAll() {
     return this.usersService.findAll();
@@ -55,9 +73,4 @@ export class UsersController {
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
-  
-
-
-
 }
-

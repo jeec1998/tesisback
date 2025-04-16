@@ -1,19 +1,45 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Strategy } from 'passport-jwt';
+import { Request } from 'express';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor() {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: (req: Request) => {
+        // 🔍 Permitir token desde query param: ?accessToken=...
+        const tokenFromQuery = req?.query?.accessToken as string;
+        if (tokenFromQuery) {
+          console.log('✅ Token desde query:', tokenFromQuery);
+          return tokenFromQuery;
+        }
+
+        // 🔍 Permitir token desde header Authorization: Bearer ...
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          const token = authHeader.split(' ')[1];
+          console.log('✅ Token desde header:', token);
+          return token;
+        }
+
+        return null;
+      },
       ignoreExpiration: false,
-      secretOrKey: 'mi_clave_secreta', 
+      secretOrKey: 'mi_clave_secreta',
+
+      // ⚠️ Muy importante para que `req` llegue al extractor
+      passReqToCallback: true,
     });
   }
 
-  async validate(payload: any) {
-    return { email: payload.email }; 
+  // ⚠️ Con `passReqToCallback`, necesitas usar este formato:
+  async validate(req: Request, payload: any) {
+    console.log('✅ Payload validado:', payload);
+    return {
+      _id: payload._id,
+      email: payload.email,
+      role: payload.role,
+    };
   }
-  
 }

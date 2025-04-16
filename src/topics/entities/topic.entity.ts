@@ -1,15 +1,19 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
+import { User } from '../../users/entities/user.entity'; 
 
 export type TopicDocument = Topic & Document;
 
 @Schema()
 export class Topic {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   name: string;
 
-  @Prop()
-  description: string;
+  @Prop({required: true})
+  curso: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  createdBy: Types.ObjectId;
 }
 
 export const TopicSchema = SchemaFactory.createForClass(Topic);

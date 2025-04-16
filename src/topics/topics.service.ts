@@ -11,18 +11,22 @@ export class TopicsService {
     @InjectModel(Topic.name) private topicModel: Model<TopicDocument>,
   ) {}
 
-  async create(createTopicDto: CreateTopicDto): Promise<Topic> {
+  async create(createTopicDto: CreateTopicDto, userId: string): Promise<Topic> {
     const existing = await this.topicModel.findOne({ name: createTopicDto.name });
     if (existing) {
       throw new BadRequestException(`El tema con el nombre "${createTopicDto.name}" ya existe.`);
     }
 
-    const createdTopic = new this.topicModel(createTopicDto);
+    const createdTopic = new this.topicModel({
+      ...createTopicDto,
+      createdBy: userId, 
+    });
+
     return createdTopic.save();
   }
 
   async findAll(): Promise<Topic[]> {
-    return this.topicModel.find().exec();
+    return this.topicModel.find().populate('createdBy', 'name email').exec();
   }
 
   async findOne(id: string): Promise<Topic> {

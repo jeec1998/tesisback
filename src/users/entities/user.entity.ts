@@ -11,8 +11,13 @@ export class User {
   @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop()
+  @Prop({ required: true })
   password: string;
-}
+
+  @Prop({ required: true, enum: ['docente', 'alumno', 'admin'] })
+  role: 'docente' | 'alumno' | 'admin';
+
+  @Prop()
+  estado?: string; }
 
 export const UserSchema = SchemaFactory.createForClass(User);
