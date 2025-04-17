@@ -16,8 +16,17 @@ export class User {
 
   @Prop({ required: true, enum: ['docente', 'alumno', 'admin'] })
   role: 'docente' | 'alumno' | 'admin';
+  @Prop({
+    enum: ['activo', 'reflexivo', 'teorico', 'pragmatico'],
+    required: function (this: User) {
+      return this.role === 'alumno';
+    },
+  })
+  estilo?: 'activo' | 'reflexivo' | 'teorico' | 'pragmatico';
+  
 
   @Prop()
   estado?: string; }
+  
 
 export const UserSchema = SchemaFactory.createForClass(User);

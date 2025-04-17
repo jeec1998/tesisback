@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException,ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Topic, TopicDocument } from './entities/topic.entity';
@@ -12,49 +12,73 @@ export class TopicsService {
   ) {}
 
   async create(createTopicDto: CreateTopicDto, userId: string): Promise<Topic> {
-    const existing = await this.topicModel.findOne({ name: createTopicDto.name });
+    const { name, curso } = createTopicDto;
+  
+    const existing = await this.topicModel.findOne({ name, curso }); // 👈 validamos ambos
+  
     if (existing) {
-      throw new BadRequestException(`El tema con el nombre "${createTopicDto.name}" ya existe.`);
+      throw new BadRequestException(
+        `Ya existe el tema "${name}" en el curso "${curso}".`
+      );
     }
-
+  
     const createdTopic = new this.topicModel({
       ...createTopicDto,
-      createdBy: userId, 
+      createdBy: userId,
     });
-
+  
     return createdTopic.save();
   }
+  
 
   async findAll(): Promise<Topic[]> {
     return this.topicModel.find().populate('createdBy', 'name email').exec();
   }
 
   async findOne(id: string): Promise<Topic> {
-    const topic = await this.topicModel.findById(id).exec();
+    const topic = await this.topicModel.findById(id);
     if (!topic) {
-      throw new NotFoundException(`Tema con id ${id} no encontrado`);
+      throw new NotFoundException('Tema no encontrado');
     }
     return topic;
   }
+  
 
-  async update(id: string, updateTopicDto: UpdateTopicDto): Promise<Topic> {
-    const updatedTopic = await this.topicModel.findByIdAndUpdate(id, updateTopicDto, {
-      new: true,
-      runValidators: true,
-    }).exec();
-
-    if (!updatedTopic) {
-      throw new NotFoundException(`Tema con id ${id} no encontrado`);
+  async update(id: string, updateTopicDto: UpdateTopicDto, userId: string): Promise<Topic> {
+    const topic = await this.topicModel.findById(id);
+  
+    if (!topic) {
+      throw new NotFoundException('Tema no encontrado');
     }
-
-    return updatedTopic;
-  }
-
-  async remove(id: string): Promise<{ deleted: boolean }> {
-    const result = await this.topicModel.deleteOne({ _id: id }).exec();
-    if (result.deletedCount === 0) {
-      throw new NotFoundException(`Tema con id ${id} no encontrado`);
+  
+    // 🔒 Asegura que el usuario autenticado sea el creador
+    if (topic.createdBy.toString() !== userId) {
+      throw new ForbiddenException('No tienes permisos para actualizar este tema');
     }
-    return { deleted: true };
+  
+    if (updateTopicDto.name !== undefined) topic.name = updateTopicDto.name;
+    if (updateTopicDto.curso !== undefined) topic.curso = updateTopicDto.curso;
+  
+    return topic.save();
   }
+  // Eliminar un tema  
+  
+  async findByCreatedBy(userId: string): Promise<Topic[]> {
+    return this.topicModel.find({ createdBy: userId }).exec();
+  }
+  
+  async remove(id: string, userId: string): Promise<Topic | null> {
+    const topic = await this.topicModel.findById(id);
+    if (!topic) {
+      throw new NotFoundException('Tema no encontrado');
+    }
+  
+    if (topic.createdBy.toString() !== userId) {
+      throw new ForbiddenException('No tienes permisos para eliminar este tema');
+    }
+  
+    return this.topicModel.findByIdAndDelete(id); // <- devuelve Topic | null
+  }
+  
+  
 }

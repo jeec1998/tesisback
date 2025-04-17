@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable,BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './entities/user.entity';
@@ -30,18 +30,22 @@ export class UsersService {
   }
   async create(createUserDto: CreateUserDto): Promise<User> {
     const hashedPassword = await this.authService.hashPassword(createUserDto.password);
-
+  
     if (createUserDto.role !== 'alumno') {
       delete createUserDto.estado;
+      delete createUserDto.estilo; 
+    } else if (!createUserDto.estilo) {
+      throw new BadRequestException('El campo "estilo" es obligatorio para alumnos');
     }
-
+  
     const createdUser = new this.userModel({
       ...createUserDto,
       password: hashedPassword,
     });
-
+  
     return createdUser.save();
   }
+  
 
   findAll(): Promise<User[]> {
     return this.userModel.find().exec();
@@ -51,10 +55,14 @@ export class UsersService {
     return this.userModel.findById(id).exec();
   }
 
-  update(id: string, updateUserDto: UpdateUserDto): Promise<User | null> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User | null> {
+    if (updateUserDto.password) {
+      updateUserDto.password = await this.authService.hashPassword(updateUserDto.password);
+    }
+  
     return this.userModel.findByIdAndUpdate(id, updateUserDto, { new: true }).exec();
   }
-
+  
   remove(id: string): Promise<User | null> {
     return this.userModel.findByIdAndDelete(id).exec();
   }

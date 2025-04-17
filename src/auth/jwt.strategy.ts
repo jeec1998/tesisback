@@ -11,7 +11,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         // 🔍 Permitir token desde query param: ?accessToken=...
         const tokenFromQuery = req?.query?.accessToken as string;
         if (tokenFromQuery) {
-          console.log('✅ Token desde query:', tokenFromQuery);
+         
           return tokenFromQuery;
         }
 
@@ -19,7 +19,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         const authHeader = req.headers.authorization;
         if (authHeader && authHeader.startsWith('Bearer ')) {
           const token = authHeader.split(' ')[1];
-          console.log('✅ Token desde header:', token);
+       
           return token;
         }
 
@@ -35,7 +35,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
   // ⚠️ Con `passReqToCallback`, necesitas usar este formato:
   async validate(req: Request, payload: any) {
-    console.log('✅ Payload validado:', payload);
+
     return {
       _id: payload._id,
       email: payload.email,

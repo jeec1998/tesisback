@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { User } from '../../users/entities/user.entity'; 
+import * as mongoose from 'mongoose';
 
 export type TopicDocument = Topic & Document;
 
@@ -17,3 +18,5 @@ export class Topic {
 }
 
 export const TopicSchema = SchemaFactory.createForClass(Topic);
+TopicSchema.index({ name: 1, curso: 1 }, { unique: true });
+
