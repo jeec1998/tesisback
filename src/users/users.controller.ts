@@ -26,8 +26,8 @@ export class UsersController {
   ) {}
 
   @Post('login')
-  async login(@Body() body: { email: string; password: string }) {
-    const user = await this.usersService.findByEmail(body.email);
+  async login(@Body() body: { nombreUsuario: string; password: string }) {
+    const user = await this.usersService.findByEmail(body.nombreUsuario);
     if (!user || !(await this.authService.comparePasswords(body.password, user.password))) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
@@ -68,6 +68,8 @@ export class UsersController {
     return {
       usuario: {
         nombre: user.name,
+        nombreUsuario: user.nombreUsuario,
+        telefono: user.telefono,
         correo: user.email,
         rol: user.role,
       },

@@ -1,15 +1,8 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import { TopicsService } from './topics.service';
 import { TopicsController } from './topics.controller';
-import { Topic, TopicSchema } from './entities/topic.entity';
-import { AuthModule } from '../auth/auth.module'; 
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: Topic.name, schema: TopicSchema }]),
-    AuthModule,
-  ],
   controllers: [TopicsController],
   providers: [TopicsService],
 })

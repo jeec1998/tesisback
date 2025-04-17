@@ -7,6 +7,8 @@ export type UserDocument = User & Document;
 export class User {
   @Prop({ required: true })
   name: string;
+  @Prop({ required: true })
+  nombreUsuario: string;
 
   @Prop({ required: true, unique: true })
   email: string;
@@ -16,6 +18,7 @@ export class User {
 
   @Prop({ required: true, enum: ['docente', 'alumno', 'admin'] })
   role: 'docente' | 'alumno' | 'admin';
+  estado?: string;
   @Prop({
     enum: ['activo', 'reflexivo', 'teorico', 'pragmatico'],
     required: function (this: User) {
@@ -23,10 +26,8 @@ export class User {
     },
   })
   estilo?: 'activo' | 'reflexivo' | 'teorico' | 'pragmatico';
-  
-
-  @Prop()
-  estado?: string; }
-  
+  @Prop({ required: true })
+  telefono: string;
+}
 
 export const UserSchema = SchemaFactory.createForClass(User);

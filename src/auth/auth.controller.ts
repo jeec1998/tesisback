@@ -12,7 +12,7 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
-    const user = await this.usersService.findByEmail(loginDto.email);
+    const user = await this.usersService.findByEmail(loginDto.nombreUsuario);
   
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas');

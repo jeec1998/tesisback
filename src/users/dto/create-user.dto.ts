@@ -15,7 +15,14 @@ export class CreateUserDto {
   @IsEnum(['docente', 'alumno', 'admin'])
   role: 'docente' | 'alumno' | 'admin';
   
-
+  @IsString()
+  @IsNotEmpty()
+  nombreUsuario?: string;
+  
+  @IsOptional()
+  @IsString()
+  telefono?: string;
+  
   @IsOptional()
   @IsString()
   estado?: string;

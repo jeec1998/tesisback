@@ -12,13 +12,14 @@ export class UsersService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private authService: AuthService,
   ) {}
+  
   async onModuleInit() {
-    const existing = await this.userModel.findOne({ email: 'enriquezjarold4@gmail.com' });
+    const existing = await this.userModel.findOne({ email: 'root@email.com' });
     if (!existing) {
       const hashedPassword = await this.authService.hashPassword('root');
       const admin: Partial<User> = {
         name: 'root',
-        email: 'enriquezjarold4@gmail.com',
+        email: 'root@email.com',
         password: hashedPassword,
         role: 'admin',
       };
@@ -67,10 +68,10 @@ export class UsersService {
     return this.userModel.findByIdAndDelete(id).exec();
   }
 
-  async findByEmail(email: string): Promise<User | null> {
+  async findByEmail(nombreUsuario: string): Promise<User | null> {
     return this.userModel
-      .findOne({ email })
-      .select('_id email password role') // Asegura los campos
+      .findOne({ nombreUsuario })
+      .select('_id name password role') // Asegura los campos
       .exec();
   }
   
