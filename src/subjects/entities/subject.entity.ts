@@ -10,8 +10,9 @@ export class Subject {
   @Prop({ required: true })
   name: string;
 
-  @Prop({required: true})
-  curso: string;
+  @Prop({ required: true, type: String })
+curso: string;
+
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   createdBy: Types.ObjectId;

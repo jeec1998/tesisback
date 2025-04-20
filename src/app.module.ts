@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { SubjectsModule } from './subjects/subjecs.module';
 import { TopicsModule } from './topics/topics.module';
 
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -26,6 +27,6 @@ import { TopicsModule } from './topics/topics.module';
     TopicsModule,
   ],
   controllers: [AppController],
-  providers: [AppService], // ✅ Asegúrate de que esté aquí
+  providers: [AppService], 
 })
 export class AppModule {}

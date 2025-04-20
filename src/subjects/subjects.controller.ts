@@ -52,13 +52,20 @@ export class SubjectsController {
   return this.SubjectsService.findByCreatedBy(id);
 }
 
-  @UseGuards(AuthGuard('jwt'))
-  @Delete(':id')
-  async remove(@Param('id') id: string, @Req() req: any) {
-    if (!isValidObjectId(id)) {
-      throw new BadRequestException('ID inválido');
-    }
+@UseGuards(AuthGuard('jwt'))
+@Delete(':id')
+async remove(@Param('id') id: string, @Req() req: any) {
+  if (!isValidObjectId(id)) {
+    throw new BadRequestException('ID inválido');
   }
+
+  if (!req.user || !req.user._id) {
+    throw new UnauthorizedException('Usuario no autenticado');
+  }
+
+  return this.SubjectsService.remove(id, req.user._id); 
+}
+
   @UseGuards(AuthGuard('jwt'))
   @Get(':id')
   async findOne(@Param('id') id: string, @Req() req: any) {

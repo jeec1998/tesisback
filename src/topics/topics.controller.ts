@@ -1,34 +1,27 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { TopicsService } from './topics.service';
+// topics.controller.ts
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Req,
+  BadRequestException,
+} from '@nestjs/common';
 import { CreateTopicDto } from './dto/create-topic.dto';
-import { UpdateTopicDto } from './dto/update-topic.dto';
+import { TopicsService } from './topics.service';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('topics')
 export class TopicsController {
   constructor(private readonly topicsService: TopicsService) {}
 
+  @UseGuards(AuthGuard('jwt'))
   @Post()
-  create(@Body() createTopicDto: CreateTopicDto) {
+  async create(@Body() createTopicDto: CreateTopicDto, @Req() req: any) {
+    if (req.user.role !== 'docente' && req.user.role !== 'admin') {
+      throw new BadRequestException('No tienes permisos para crear temas');
+    }
+
     return this.topicsService.create(createTopicDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.topicsService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.topicsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTopicDto: UpdateTopicDto) {
-    return this.topicsService.update(+id, updateTopicDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.topicsService.remove(+id);
   }
 }

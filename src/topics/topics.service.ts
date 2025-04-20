@@ -1,26 +1,53 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Topic, TopicDocument } from './entities/topic.entity';
 import { CreateTopicDto } from './dto/create-topic.dto';
 import { UpdateTopicDto } from './dto/update-topic.dto';
 
 @Injectable()
 export class TopicsService {
-  create(createTopicDto: CreateTopicDto) {
-    return 'This action adds a new topic';
+  constructor(
+    @InjectModel(Topic.name)
+    private readonly topicModel: Model<TopicDocument>,
+  ) {}
+
+  async create(createTopicDto: CreateTopicDto): Promise<Topic> {
+    const topic = new this.topicModel(createTopicDto);
+    return topic.save();
   }
 
-  findAll() {
-    return `This action returns all topics`;
+  async findAll(): Promise<Topic[]> {
+    return this.topicModel.find().populate('subject').exec();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} topic`;
+  async findOne(id: string): Promise<Topic> {
+    const topic = await this.topicModel.findById(id).populate('subject');
+    if (!topic) {
+      throw new NotFoundException('Tema no encontrado');
+    }
+    return topic;
   }
 
-  update(id: number, updateTopicDto: UpdateTopicDto) {
-    return `This action updates a #${id} topic`;
+  async update(id: string, updateTopicDto: UpdateTopicDto): Promise<Topic> {
+    const topic = await this.topicModel.findByIdAndUpdate(id, updateTopicDto, {
+      new: true,
+    }).populate('subject');
+
+    if (!topic) {
+      throw new NotFoundException('Tema no encontrado');
+    }
+
+    return topic;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} topic`;
+  async remove(id: string): Promise<Topic> {
+    const topic = await this.topicModel.findByIdAndDelete(id).populate('subject');
+
+    if (!topic) {
+      throw new NotFoundException('Tema no encontrado');
+    }
+
+    return topic;
   }
 }

@@ -14,8 +14,7 @@ export class SubjectsService {
   async create(createSubjectDto: CreateSubjectDto, userId: string): Promise<Subject> {
     const { name, curso } = createSubjectDto;
   
-    const existing = await this.SubjectModel.findOne({ name, curso }); // 👈 validamos ambos
-  
+    const existing = await this.SubjectModel.findOne({ name, curso }); 
     if (existing) {
       throw new BadRequestException(
         `Ya existe el tema "${name}" en el curso "${curso}".`
@@ -51,7 +50,7 @@ export class SubjectsService {
       throw new NotFoundException('Tema no encontrado');
     }
   
-    // 🔒 Asegura que el usuario autenticado sea el creador
+   
     if (Subject.createdBy.toString() !== userId) {
       throw new ForbiddenException('No tienes permisos para actualizar este tema');
     }
@@ -61,7 +60,7 @@ export class SubjectsService {
   
     return Subject.save();
   }
-  // Eliminar un tema  
+  
   
   async findByCreatedBy(userId: string): Promise<Subject[]> {
     return this.SubjectModel.find({ createdBy: userId }).exec();
@@ -77,7 +76,7 @@ export class SubjectsService {
       throw new ForbiddenException('No tienes permisos para eliminar este tema');
     }
   
-    return this.SubjectModel.findByIdAndDelete(id); // <- devuelve Subject | null
+    return this.SubjectModel.findByIdAndDelete(id);
   }
   
   
