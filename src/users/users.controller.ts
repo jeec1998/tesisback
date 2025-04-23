@@ -71,7 +71,8 @@ export class UsersController {
         nombreUsuario: user.nombreUsuario,
         telefono: user.telefono,
         correo: user.email,
-        rol: user.role,
+        role: user.role,
+        estilo: user.estilo,
       },
     };
   }

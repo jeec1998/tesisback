@@ -20,9 +20,6 @@ export class AuthService {
       access_token: await this.jwtService.signAsync(payload),
     };
   }
-  
-  
-  
   async generateToken(payload: any): Promise<string> {
     return this.jwtService.signAsync(payload);
   }
