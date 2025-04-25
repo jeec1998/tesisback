@@ -78,6 +78,23 @@ export class SubjectsService {
   
     return this.SubjectModel.findByIdAndDelete(id);
   }
+  async updateAsAdmin(id: string, updateSubjectDto: UpdateSubjectDto) {
+    const subject = await this.SubjectModel.findByIdAndUpdate(id, updateSubjectDto, { new: true });
   
+    if (!subject) {
+      throw new NotFoundException('Subject no encontrado');
+    }
+  
+    return subject;
+  }
+  async removeAsAdmin(id: string): Promise<Subject> {
+    const subject = await this.SubjectModel.findByIdAndDelete(id);
+    
+    if (!subject) {
+      throw new NotFoundException('Materia no encontrada');
+    }
+  
+    return subject;
+  }
   
 }

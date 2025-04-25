@@ -9,6 +9,7 @@ import {
   Req,
   UseGuards,
   UnauthorizedException,
+  NotFoundException,
   BadRequestException
 } from '@nestjs/common';
 import { SubjectsService } from './subjects.service';
@@ -42,6 +43,7 @@ export class SubjectsController {
   
     return this.SubjectsService.update(id, updateSubjectDto, req.user._id); 
   }
+
   @UseGuards(AuthGuard('jwt'))
   @Get('usuario/:id')
   async findByUsuario(@Param('id') id: string) {
@@ -75,6 +77,54 @@ async remove(@Param('id') id: string, @Req() req: any) {
   
     return this.SubjectsService.findOne(id); 
   }
-  
+@UseGuards(AuthGuard('jwt'))
+@Post('admin/:userId')
+async createForUser(
+  @Param('userId') userId: string,
+  @Body() createSubjectDto: CreateSubjectDto,
+  @Req() req: any,
+) {
+  if (!isValidObjectId(userId)) {
+    throw new BadRequestException('ID de usuario inválido');
+  }
+
+  if (!req.user || req.user.role !== 'admin') {
+    throw new UnauthorizedException('Solo administradores pueden asignar materias a cualquier usuario');
+  }
+
+  return this.SubjectsService.create(createSubjectDto, userId);
+}
+  @UseGuards(AuthGuard('jwt'))
+  @Put('admin/:id')
+  async updateAsAdmin(
+  @Param('id') id: string,
+  @Body() updateSubjectDto: UpdateSubjectDto,
+  @Req() req: any,
+) {
+  if (!isValidObjectId(id)) {
+    throw new BadRequestException('ID inválido');
+  }
+
+  if (!req.user || req.user.role !== 'admin') {
+    throw new UnauthorizedException('Solo administradores pueden editar cualquier meateria');
+  }
+
+  return this.SubjectsService.updateAsAdmin(id, updateSubjectDto);
+}
+@UseGuards(AuthGuard('jwt'))
+@Delete('admin/:id')
+async removeAsAdmin(@Param('id') id: string, @Req() req: any) {
+  if (!isValidObjectId(id)) {
+    throw new BadRequestException('ID inválido');
+  }
+
+  if (!req.user || req.user.role !== 'admin') {
+    throw new UnauthorizedException('Solo administradores pueden eliminar cualquier materia');
+  }
+
+  return this.SubjectsService.removeAsAdmin(id);
+}
+
+
 
 }

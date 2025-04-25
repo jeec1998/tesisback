@@ -22,8 +22,7 @@ export class UsersService {
         nombreUsuario: 'root',
         email: 'root@email.com',
         password: hashedPassword,
-        telefono: '123456789',
-        estado: 'activo',
+        telefono: '0968144760',
         role: 'admin',
       };
       await new this.userModel(admin).save();
@@ -35,13 +34,6 @@ export class UsersService {
   async create(createUserDto: CreateUserDto): Promise<User> {
     const hashedPassword = await this.authService.hashPassword(createUserDto.password);
   
-    if (createUserDto.role !== 'alumno') {
-      delete createUserDto.estado;
-      delete createUserDto.estilo; 
-    } else if (!createUserDto.estilo) {
-      throw new BadRequestException('El campo "estilo" es obligatorio para alumnos');
-    }
-  
     const createdUser = new this.userModel({
       ...createUserDto,
       password: hashedPassword,
@@ -49,6 +41,7 @@ export class UsersService {
   
     return createdUser.save();
   }
+  
   
 
   findAll(): Promise<User[]> {
@@ -74,8 +67,11 @@ export class UsersService {
   async findByEmail(nombreUsuario: string): Promise<User | null> {
     return this.userModel
       .findOne({ nombreUsuario })
-      .select('_id name password role') // Asegura los campos
+      .select('_id name password role') 
       .exec();
+  }
+  async findAlumnosByMateria(materiaId: string) {
+    return this.userModel.find({ createbysubject: materiaId, role: 'alumno' }).exec();
   }
   
   

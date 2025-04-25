@@ -4,7 +4,6 @@ import { SubjectsService } from './subjects.service';
 import { SubjectsController } from './subjects.controller';
 import { Subject, SubjectSchema } from './entities/subject.entity';
 import { AuthModule } from '../auth/auth.module'; 
-
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Subject.name, schema: SubjectSchema }]),
@@ -12,5 +11,7 @@ import { AuthModule } from '../auth/auth.module';
   ],
   controllers: [SubjectsController],
   providers: [SubjectsService],
+  exports: [SubjectsService], 
 })
 export class SubjectsModule {}
+
