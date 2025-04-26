@@ -1,7 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { User } from '../../users/entities/user.entity'; 
-import * as mongoose from 'mongoose';
 
 export type TopicDocument = Topic & Document;
 
@@ -9,10 +7,15 @@ export type TopicDocument = Topic & Document;
 export class Topic {
   @Prop({ required: true })
   name: string;
+
   @Prop({ type: Types.ObjectId, ref: 'Subject', required: true })
-  subject: Types.ObjectId; // Referencia al Subject
+  subject: Types.ObjectId;
+
+  @Prop({ type: [String], default: [] })
+  subtopics: string[];
 }
 
 export const TopicSchema = SchemaFactory.createForClass(Topic);
-TopicSchema.index({ name: 1, curso: 1 }, { unique: true });
+
+TopicSchema.index({ name: 1 }, { unique: true });
 

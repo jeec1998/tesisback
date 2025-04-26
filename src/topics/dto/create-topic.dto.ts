@@ -1,5 +1,4 @@
-// create-topic.dto.ts
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsMongoId, IsArray, IsOptional } from 'class-validator';
 
 export class CreateTopicDto {
   @IsNotEmpty()
@@ -7,10 +6,10 @@ export class CreateTopicDto {
   name: string;
 
   @IsNotEmpty()
-  @IsString()
-  curso: string;
-
-  @IsNotEmpty()
-  @IsString()
+  @IsMongoId()
   subject: string;
+
+  @IsOptional()
+  @IsArray()
+  subtopics?: string[];
 }
