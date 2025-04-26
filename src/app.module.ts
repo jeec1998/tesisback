@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { SubjectsModule } from './subjects/subjecs.module';
 import { TopicsModule } from './topics/topics.module';
+import { DropboxModule } from './dropbox/dropbox.module';
 
 
 @Module({
@@ -25,6 +26,7 @@ import { TopicsModule } from './topics/topics.module';
     AuthModule,
     SubjectsModule,
     TopicsModule,
+    DropboxModule,
   ],
   controllers: [AppController],
   providers: [AppService], 
