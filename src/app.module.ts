@@ -31,6 +31,6 @@ import { AcademicSupportModule } from './academic-support/academic-support.modul
     AcademicSupportModule,
   ],
   controllers: [AppController],
-  providers: [AppService], 
+  providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

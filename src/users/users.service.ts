@@ -16,10 +16,10 @@ export class UsersService {
   async onModuleInit() {
     const existing = await this.userModel.findOne({ email: 'root@email.com' });
     if (!existing) {
-      const hashedPassword = await this.authService.hashPassword('root123');
+      const hashedPassword = await this.authService.hashPassword('administrador123');
       const admin: Partial<User> = {
         name:'root',
-        nombreUsuario: 'root',
+        nombreUsuario: 'admin',
         email: 'root@email.com',
         password: hashedPassword,
         telefono: '0968144760',
