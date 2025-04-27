@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { SubjectsModule } from './subjects/subjecs.module';
 import { TopicsModule } from './topics/topics.module';
 import { DropboxModule } from './dropbox/dropbox.module';
+import { AcademicSupportModule } from './academic-support/academic-support.module';
 
 
 @Module({
@@ -27,6 +28,7 @@ import { DropboxModule } from './dropbox/dropbox.module';
     SubjectsModule,
     TopicsModule,
     DropboxModule,
+    AcademicSupportModule,
   ],
   controllers: [AppController],
   providers: [AppService], 
