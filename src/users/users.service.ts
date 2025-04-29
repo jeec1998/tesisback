@@ -1,4 +1,4 @@
-import { Injectable,BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './entities/user.entity';
@@ -11,14 +11,14 @@ export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private authService: AuthService,
-  ) {}
-  
+  ) { }
+
   async onModuleInit() {
     const existing = await this.userModel.findOne({ email: 'root@email.com' });
     if (!existing) {
       const hashedPassword = await this.authService.hashPassword('administrador123');
       const admin: Partial<User> = {
-        name:'root',
+        name: 'root',
         nombreUsuario: 'admin',
         email: 'root@email.com',
         password: hashedPassword,
@@ -33,16 +33,14 @@ export class UsersService {
   }
   async create(createUserDto: CreateUserDto): Promise<User> {
     const hashedPassword = await this.authService.hashPassword(createUserDto.password);
-  
+
     const createdUser = new this.userModel({
       ...createUserDto,
       password: hashedPassword,
     });
-  
+
     return createdUser.save();
   }
-  
-  
 
   findAll(): Promise<User[]> {
     return this.userModel.find().exec();
@@ -56,10 +54,10 @@ export class UsersService {
     if (updateUserDto.password) {
       updateUserDto.password = await this.authService.hashPassword(updateUserDto.password);
     }
-  
+
     return this.userModel.findByIdAndUpdate(id, updateUserDto, { new: true }).exec();
   }
-  
+
   remove(id: string): Promise<User | null> {
     return this.userModel.findByIdAndDelete(id).exec();
   }
@@ -67,12 +65,12 @@ export class UsersService {
   async findByEmail(nombreUsuario: string): Promise<User | null> {
     return this.userModel
       .findOne({ nombreUsuario })
-      .select('_id name password role') 
+      .select('_id name password role')
       .exec();
   }
   async findAlumnosByMateria(materiaId: string) {
     return this.userModel.find({ createbysubject: materiaId, role: 'alumno' }).exec();
   }
-  
-  
+
+
 }

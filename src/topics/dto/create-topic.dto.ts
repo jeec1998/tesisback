@@ -1,4 +1,19 @@
-import { IsNotEmpty, IsString, IsMongoId, IsArray, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsMongoId, IsArray, ValidateNested, IsOptional, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class SubtopicDto {
+  @IsOptional()
+  @IsMongoId()
+  _id?: string; 
+
+  @IsNotEmpty()
+  @IsString()
+  name: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  maxScore: number;
+}
 
 export class CreateTopicDto {
   @IsNotEmpty()
@@ -11,5 +26,7 @@ export class CreateTopicDto {
 
   @IsOptional()
   @IsArray()
-  subtopics?: string[];
+  @ValidateNested({ each: true })
+  @Type(() => SubtopicDto)
+  subtopics?: SubtopicDto[];
 }

@@ -5,6 +5,6 @@ import { Upload, UploadSchema } from './dto/upload-schema';
 
 @Module({
   imports: [MongooseModule.forFeature([{ name: Upload.name, schema: UploadSchema }])],
-  exports: [MongooseModule], // Para que puedas usarlo en DropboxService
+  exports: [MongooseModule],
 })
-export class UploadsModule {}
+export class UploadsModule { }

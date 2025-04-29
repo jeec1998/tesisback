@@ -16,9 +16,11 @@ export class TopicsService {
     const topic = new this.topicModel(createTopicDto);
     return topic.save();
   }
+
   async findByMateria(subjectId: string): Promise<Topic[]> {
     return this.topicModel.find({ subject: subjectId }).exec();
   }
+
   async findAll(): Promise<Topic[]> {
     return this.topicModel.find().populate('subject').exec();
   }
@@ -53,3 +55,4 @@ export class TopicsService {
     return topic;
   }
 }
+

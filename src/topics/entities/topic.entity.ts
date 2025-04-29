@@ -1,9 +1,18 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
-export type TopicDocument = Topic & Document;
+export class Subtopic {
+  @Prop({ required: true })
+  name: string;
 
-@Schema()
+  @Prop({ required: true })
+  maxScore: number;
+  
+  @Prop({ required: true, default: () => new Types.ObjectId() })
+  _id: Types.ObjectId;
+}
+
+@Schema({ timestamps: true })
 export class Topic {
   @Prop({ required: true })
   name: string;
@@ -11,11 +20,9 @@ export class Topic {
   @Prop({ type: Types.ObjectId, ref: 'Subject', required: true })
   subject: Types.ObjectId;
 
-  @Prop({ type: [String], default: [] })
-  subtopics: string[];
+  @Prop({ type: [Subtopic], default: [] })
+  subtopics: Subtopic[];
 }
 
+export type TopicDocument = Topic & Document;
 export const TopicSchema = SchemaFactory.createForClass(Topic);
-
-TopicSchema.index({ name: 1 }, { unique: true });
-

@@ -5,7 +5,7 @@ import { UpdateAcademicSupportDto } from './dto/update-academic-support.dto';
 
 @Controller('academic-support')
 export class AcademicSupportController {
-  constructor(private readonly academicSupportService: AcademicSupportService) {}
+  constructor(private readonly academicSupportService: AcademicSupportService) { }
 
   @Post()
   create(@Body() createAcademicSupportDto: CreateAcademicSupportDto) {

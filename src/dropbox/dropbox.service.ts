@@ -7,6 +7,9 @@ import { Model } from 'mongoose';
 import { Upload, UploadDocument } from './dto/upload-schema';
 import * as dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import { CreateUploadDto } from './dto/create-dropbox.dto';
+
+
 dotenv.config();
 
 @Injectable()
@@ -14,37 +17,54 @@ export class DropboxService {
   constructor(
     private readonly dropboxAuthService: DropboxAuthService,
     @InjectModel(Upload.name) private uploadModel: Model<UploadDocument>,
-  ) {}
+  ) { }
 
-  async uploadFile(file: Express.Multer.File): Promise<string> {
-   
-    const accessToken = await this.dropboxAuthService.refreshAccessToken();
+// src/dropbox/dropbox.service.ts
 
-    const dbx = new Dropbox({
-      accessToken,
-      fetch,
-    });
+async uploadFile(file: Express.Multer.File, body: CreateUploadDto): Promise<string> {
+  const accessToken = await this.dropboxAuthService.refreshAccessToken();
 
-    const pathInDropbox = '/' + file.originalname;
+  const dbx = new Dropbox({
+    accessToken,
+    fetch,
+  });
 
-    const uploadResponse = await dbx.filesUpload({
-      path: pathInDropbox,
-      contents: file.buffer,
-      mode: { '.tag': 'add' },
-    });
+  const pathInDropbox = '/' + file.originalname;
 
+  const uploadResponse = await dbx.filesUpload({
+    path: pathInDropbox,
+    contents: file.buffer,
+    mode: { '.tag': 'add' },
+  });
+
+  let publicUrl: string;
+
+  try {
     const sharedLinkResponse = await dbx.sharingCreateSharedLinkWithSettings({
       path: uploadResponse.result.path_lower!,
     });
-
-    const publicUrl = sharedLinkResponse.result.url.replace('?dl=0', '?raw=1');
-
-    // ⬇️ GUARDAR EN MONGO ⬇️
-    await this.uploadModel.create({
-      fileName: file.originalname,
-      dropboxUrl: publicUrl,
-    });
-
-    return publicUrl;
+    publicUrl = sharedLinkResponse.result.url.replace('?dl=0', '?raw=1');
+  } catch (error) {
+    if (error?.error?.error_summary?.startsWith('shared_link_already_exists')) {
+      const metadata = error.error.error.shared_link_already_exists.metadata;
+      publicUrl = metadata.url.replace('?dl=0', '?raw=1');
+    } else {
+      console.error('Error creando shared link:', error);
+      throw error;
+    }
   }
+
+  await this.uploadModel.create({
+    fileName: file.originalname,
+    dropboxUrl: publicUrl,
+    title: body.title,
+    description: body.description,
+    topicId: body.topicId,
+    subtopicId: body.subtopicId,
+    fileType: body.fileType,
+  });
+
+  return publicUrl;
+}
+
 }
