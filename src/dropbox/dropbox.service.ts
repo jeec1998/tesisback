@@ -19,7 +19,6 @@ export class DropboxService {
     @InjectModel(Upload.name) private uploadModel: Model<UploadDocument>,
   ) { }
 
-// src/dropbox/dropbox.service.ts
 
 async uploadFile(file: Express.Multer.File, body: CreateUploadDto): Promise<string> {
   const accessToken = await this.dropboxAuthService.refreshAccessToken();
@@ -59,6 +58,7 @@ async uploadFile(file: Express.Multer.File, body: CreateUploadDto): Promise<stri
     dropboxUrl: publicUrl,
     title: body.title,
     description: body.description,
+    subjectId: body.subjectId,
     topicId: body.topicId,
     subtopicId: body.subtopicId,
     fileType: body.fileType,

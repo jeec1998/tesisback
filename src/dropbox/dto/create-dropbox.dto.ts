@@ -10,6 +10,10 @@ export class CreateUploadDto {
   description: string;
 
   @IsNotEmpty()
+  @IsString()
+  subjectId: string;
+
+  @IsNotEmpty()
   @IsMongoId()
   topicId: string;
 

@@ -16,7 +16,10 @@ export class Upload {
 
   @Prop({ required: true })
   description: string;  
-
+  
+  @Prop({ type: Types.ObjectId, ref: 'Subject', required: true })
+  subjectId: Types.ObjectId;
+  
   @Prop({ type: Types.ObjectId, ref: 'topic', required: true })
   topicId: Types.ObjectId;
 
