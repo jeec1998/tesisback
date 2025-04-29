@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { Topic, TopicDocument } from './entities/topic.entity';
 import { CreateTopicDto } from './dto/create-topic.dto';
 import { UpdateTopicDto } from './dto/update-topic.dto';
+import { Types } from 'mongoose';
 
 @Injectable()
 export class TopicsService {
@@ -12,10 +13,20 @@ export class TopicsService {
     private readonly topicModel: Model<TopicDocument>,
   ) {}
 
-  async create(createTopicDto: CreateTopicDto): Promise<Topic> {
-    const topic = new this.topicModel(createTopicDto);
-    return topic.save();
+  async create(createTopicDto: CreateTopicDto) {
+    if (createTopicDto.subtopics && createTopicDto.subtopics.length > 0) {
+      createTopicDto.subtopics = createTopicDto.subtopics.map((subtopic) => {
+        if (!subtopic._id) {
+          subtopic._id = new Types.ObjectId().toHexString();
+        }
+        return subtopic;
+      });
+    }
+  
+    const createdTopic = new this.topicModel(createTopicDto);
+    return createdTopic.save();
   }
+  
 
   async findByMateria(subjectId: string): Promise<Topic[]> {
     return this.topicModel.find({ subject: subjectId }).exec();
