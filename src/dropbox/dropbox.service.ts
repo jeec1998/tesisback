@@ -20,51 +20,57 @@ export class DropboxService {
   ) { }
 
 
-async uploadFile(file: Express.Multer.File, body: CreateUploadDto): Promise<string> {
-  const accessToken = await this.dropboxAuthService.refreshAccessToken();
+  async uploadFile(file: Express.Multer.File, body: CreateUploadDto): Promise<string> {
+    const accessToken = await this.dropboxAuthService.refreshAccessToken();
 
-  const dbx = new Dropbox({
-    accessToken,
-    fetch,
-  });
-
-  const pathInDropbox = '/' + file.originalname;
-
-  const uploadResponse = await dbx.filesUpload({
-    path: pathInDropbox,
-    contents: file.buffer,
-    mode: { '.tag': 'add' },
-  });
-
-  let publicUrl: string;
-
-  try {
-    const sharedLinkResponse = await dbx.sharingCreateSharedLinkWithSettings({
-      path: uploadResponse.result.path_lower!,
+    const dbx = new Dropbox({
+      accessToken,
+      fetch,
     });
-    publicUrl = sharedLinkResponse.result.url.replace('?dl=0', '?raw=1');
-  } catch (error) {
-    if (error?.error?.error_summary?.startsWith('shared_link_already_exists')) {
-      const metadata = error.error.error.shared_link_already_exists.metadata;
-      publicUrl = metadata.url.replace('?dl=0', '?raw=1');
-    } else {
-      console.error('Error creando shared link:', error);
-      throw error;
+
+    const pathInDropbox = '/' + file.originalname;
+
+    const uploadResponse = await dbx.filesUpload({
+      path: pathInDropbox,
+      contents: file.buffer,
+      mode: { '.tag': 'add' },
+    });
+
+    let publicUrl: string;
+
+    try {
+      const sharedLinkResponse = await dbx.sharingCreateSharedLinkWithSettings({
+        path: uploadResponse.result.path_lower!,
+      });
+      publicUrl = sharedLinkResponse.result.url.replace('?dl=0', '?raw=1');
+    } catch (error) {
+      if (error?.error?.error_summary?.startsWith('shared_link_already_exists')) {
+        const metadata = error.error.error.shared_link_already_exists.metadata;
+        publicUrl = metadata.url.replace('?dl=0', '?raw=1');
+      } else {
+        console.error('Error creando shared link:', error);
+        throw error;
+      }
     }
+
+    await this.uploadModel.create({
+      fileName: file.originalname,
+      dropboxUrl: publicUrl,
+      title: body.title,
+      description: body.description,
+      subjectId: body.subjectId,
+      topicId: body.topicId,
+      subtopicId: body.subtopicId,
+      fileType: body.fileType,
+    });
+
+    return publicUrl;
+  }
+  async getResourcesBySubject(subjectId: string): Promise<Upload[]> {
+    return this.uploadModel.find({ subjectId }).exec();  // Filtra los recursos por subjectId
   }
 
-  await this.uploadModel.create({
-    fileName: file.originalname,
-    dropboxUrl: publicUrl,
-    title: body.title,
-    description: body.description,
-    subjectId: body.subjectId,
-    topicId: body.topicId,
-    subtopicId: body.subtopicId,
-    fileType: body.fileType,
-  });
 
-  return publicUrl;
-}
+
 
 }

@@ -9,6 +9,7 @@ import { SubjectsModule } from './subjects/subjecs.module';
 import { TopicsModule } from './topics/topics.module';
 import { DropboxModule } from './dropbox/dropbox.module';
 import { AcademicSupportModule } from './academic-support/academic-support.module';
+import { GradeModule } from './grade/grade.module';
 
 
 @Module({
@@ -29,6 +30,7 @@ import { AcademicSupportModule } from './academic-support/academic-support.modul
     TopicsModule,
     DropboxModule,
     AcademicSupportModule,
+    GradeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -14,7 +14,6 @@ export class AuthService {
       role: user.role,
     };
   
-    console.log('📦 Payload JWT:', payload);
   
     return {
       access_token: await this.jwtService.signAsync(payload),

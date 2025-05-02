@@ -7,6 +7,7 @@ export type UserDocument = User & Document;
 export class User {
   @Prop({ required: true })
   name: string;
+
   @Prop({ required: true, unique: true })
   nombreUsuario: string;
 
@@ -19,6 +20,7 @@ export class User {
   @Prop({ required: true, enum: ['docente', 'alumno', 'admin'] })
   role: 'docente' | 'alumno' | 'admin';
   estado?: string;
+
   @Prop({
     type: [String],
     enum: ['activo', 'reflexivo', 'teorico', 'pragmatico'],
@@ -27,7 +29,7 @@ export class User {
     },
   })
   estilo?: ('activo' | 'reflexivo' | 'teorico' | 'pragmatico')[];
-  
+
   @Prop({ required: true })
   telefono: string;
 
