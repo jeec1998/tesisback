@@ -1,32 +1,33 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Delete,
-  Put,
-  UseGuards,
-  Request,
-  UnauthorizedException,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Put, UseGuards, Request, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthService } from '../auth/auth.service';
 import { AuthGuard } from '@nestjs/passport';
-import { SubjectsService } from '../subjects/subjects.service'; 
+import { SubjectsService } from '../subjects/subjects.service';
+import * as crypto from 'crypto'; // Para generar datos aleatorios
 
 @Controller('users')
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly authService: AuthService,
-    private readonly subjectsService: SubjectsService, 
-  ) {}
+    private readonly subjectsService: SubjectsService,
+  ) { }
 
+  // Función para generar nombre de usuario y contraseña aleatoria
+/*   generateRandomCredentials() {
+    const username = `user${crypto.randomBytes(4).toString('hex')}`;
+    const password = crypto.randomBytes(8).toString('hex'); // Contraseña aleatoria
+    return { username, password };
+  } */
+
+  // Función para generar el enlace de WhatsApp
+  generateWhatsappLink(phoneNumber: string, username: string, password: string): string {
+    const message = `Tu nombre de usuario es: ${username} y tu contraseña es: ${password}`;
+    const encodedMessage = encodeURIComponent(message); // Codificamos el mensaje
+    return `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+  }
   @Post('login')
   async login(@Body() body: { nombreUsuario: string; password: string }) {
     const user = await this.usersService.findByEmail(body.nombreUsuario);
@@ -42,23 +43,42 @@ export class UsersController {
     return { accessToken };
   }
 
+
+
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
-    if (createUserDto.role === 'alumno') {
-      if (!createUserDto.createbysubject) {
-        throw new BadRequestException('El campo createbysubject es obligatorio para alumnos.');
+    try {
+      // Generar una contraseña y nombre de usuario aleatorio
+      const password = crypto.randomBytes(8).toString('hex');  // 16 bytes para mayor seguridad
+      const username = crypto.randomBytes(8).toString('hex');
+      
+      // Asignar valores al DTO
+      createUserDto.nombreUsuario = username;
+      createUserDto.password = password;
+  
+      // Crear el usuario
+      const user = await this.usersService.create(createUserDto);
+  
+      // Generar el enlace de WhatsApp si tiene teléfono, sino enviar un mensaje vacío.
+      let whatsappLink = '';
+      if (user.telefono) {
+        whatsappLink = this.generateWhatsappLink(user.telefono, user.nombreUsuario, user.password);
       }
-
-      const subject = await this.subjectsService.findOne(createUserDto.createbysubject);
-      if (!subject) {
-        throw new NotFoundException(
-          `La materia con ID ${createUserDto.createbysubject} no existe.`,
-        );
-      }
+  
+      // Retornar la respuesta con el mensaje y enlace de WhatsApp (si existe)
+      return {
+        message: 'Usuario creado correctamente',
+        link: whatsappLink || null,  // Si no tiene teléfono, el link será null
+      };
+      
+    } catch (error) {
+      return { message: 'Error al crear el usuario', error: error.message };
     }
-
-    return this.usersService.create(createUserDto);
   }
+  
+
+
+
 
   @UseGuards(AuthGuard('jwt'))
   @Get('perfil')
@@ -81,20 +101,19 @@ export class UsersController {
         nombreUsuario: user.nombreUsuario,
         telefono: user.telefono,
         telefonorepresentante: user.telefonorepresentante,
-        estado: user.estado,    
+        estado: user.estado,
         correo: user.email,
         role: user.role,
         estilo: user.estilo,
       },
     };
   }
+
   @UseGuards(AuthGuard('jwt'))
   @Get('materia/:materiaId')
   findAlumnosByMateria(@Param('materiaId') materiaId: string) {
     return this.usersService.findAlumnosByMateria(materiaId);
   }
-  
-
 
   @Get()
   findAll() {
@@ -112,33 +131,61 @@ export class UsersController {
 
     return this.usersService.update(userId, updateUserDto);
   }
+
   @UseGuards(AuthGuard('jwt'))
-@Put(':id')
-async actualizarUsuarioPorId(
-  @Param('id') id: string,
-  @Body() updateUserDto: UpdateUserDto,
-  @Request() req,
-) {
-  const rol = req.user?.role;
-  if (rol !== 'admin') {
-    throw new UnauthorizedException('Solo el administrador puede actualizar usuarios por ID');
+  @Put(':id')
+  async actualizarUsuarioPorId(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Request() req,
+  ) {
+    const rol = req.user?.role;
+    if (rol !== 'admin') {
+      throw new UnauthorizedException('Solo el administrador puede actualizar usuarios por ID');
+    }
+
+    return this.usersService.update(id, updateUserDto);
   }
 
-  return this.usersService.update(id, updateUserDto);
-}
-
-@UseGuards(AuthGuard('jwt'))
-@Get(':id')
-async findOne(@Param('id') id: string) {
-  const user = await this.usersService.findOne(id);
-  if (!user) {
-    throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+  @UseGuards(AuthGuard('jwt'))
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    const user = await this.usersService.findOne(id);
+    if (!user) {
+      throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+    }
+    return user;
   }
-  return user;
-}
 
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
+  }
+  @UseGuards(AuthGuard('jwt'))
+  @Put(':id/reset-password')
+  async resetPassword(@Param('id') id: string, @Request() req) {
+    const rol = req.user?.role;
+
+    // Verificar que el rol no sea "alumno"
+    if (rol === 'alumno') {
+      throw new UnauthorizedException('El rol "alumno" no tiene permiso para restablecer contraseñas');
+    }
+
+    const newPassword = crypto.randomBytes(8).toString('hex');
+
+    const updatedUser = await this.usersService.resetPassword(id, newPassword);
+
+    if (!updatedUser) {
+      throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+    }
+
+    // Si el usuario tiene teléfono, generar el enlace de WhatsApp
+    if (updatedUser.telefono) {
+      const whatsappLink = this.generateWhatsappLink(updatedUser.telefono, updatedUser.nombreUsuario, newPassword);
+      return { message: 'Contraseña restablecida y enlace de WhatsApp generado', link: whatsappLink };
+    }
+
+    // Si no tiene teléfono, solo devolver el mensaje con la nueva contraseña
+    return { message: 'Contraseña restablecida correctamente ✅', password: newPassword };
   }
 }

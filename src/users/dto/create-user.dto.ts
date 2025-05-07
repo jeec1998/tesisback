@@ -19,7 +19,7 @@ export class CreateUserDto {
   @IsNotEmpty()
   nombreUsuario?: string;
 
-  @IsOptional()
+
   @IsString()
   telefono?: string;
 
@@ -32,6 +32,7 @@ export class CreateUserDto {
   @IsString()
   estado?: string;
 
+  @ValidateIf(o => o.role === 'alumno')
   @IsArray()
   @ArrayNotEmpty()
   @IsEnum(['activo', 'reflexivo', 'teorico', 'pragmatico'], { each: true })

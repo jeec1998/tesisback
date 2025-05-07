@@ -5,6 +5,9 @@ import { User, UserDocument } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthService } from '../auth/auth.service';
+import * as bcrypt from 'bcrypt';
+
+
 
 @Injectable()
 export class UsersService {
@@ -71,6 +74,19 @@ export class UsersService {
   async findAlumnosByMateria(materiaId: string) {
     return this.userModel.find({ createbysubject: materiaId, role: 'alumno' }).exec();
   }
+ 
 
+  async resetPassword(id: string, newPassword: string) {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+  
+    const updatedUser = await this.userModel.findByIdAndUpdate(
+      id,
+      { password: hashedPassword },
+      { new: true }
+    );
+  
+    return updatedUser;
+  }
+  
 
 }

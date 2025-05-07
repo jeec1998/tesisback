@@ -79,7 +79,6 @@ export class AcademicSupportService {
 
     const estilosDeAprendizaje = [
       'Activo',
-      'Reflexivo',
     ];
 
     const recursosDisponibles = [
@@ -191,7 +190,7 @@ export class AcademicSupportService {
       4. Diseñar una **actividad de refuerzo** orientada **a la creación de un documento entregable**, que el estudiante pueda trabajar en casa y entregar al profesor como evidencia de su aprendizaje.
       5. Asegurar que la actividad tenga **complejidad media**, adecuada al nivel de segundo de bachillerato, sin ser excesivamente simple ni demasiado difícil.
       6. Describir los **pasos concretos** que debe seguir el estudiante para completar la tarea y crear su documento entregable.
-      7. Explicar brevemente el **análisis que realizaste** para seleccionar los recursos y diseñar la actividad.
+      
 
       **Importante**:
       - La actividad debe estar orientada exclusivamente a **un solo estudiante**.
@@ -221,7 +220,7 @@ export class AcademicSupportService {
           "tipo_documento_entregable": "Tipo de documento que el estudiante debe crear y entregar (por ejemplo: resumen, ensayo breve, informe, esquema, presentación escrita).",
           "objetivo": "Objetivo educativo que se busca alcanzar con esta actividad."
         },
-        "analisis_del_modelo": "Explicación breve del razonamiento seguido para seleccionar los recursos y diseñar la actividad de refuerzo orientada al documento entregable."
+        
       }
         
       ## Reglas estrictas:
