@@ -114,7 +114,46 @@ export class UsersController {
   findAlumnosByMateria(@Param('materiaId') materiaId: string) {
     return this.usersService.findAlumnosByMateria(materiaId);
   }
-
+  @UseGuards(AuthGuard('jwt'))
+  @Put('cambiar-contrasena')
+  async cambiarContrasena(@Request() req, @Body() body: { currentPassword: string; newPassword: string }) {
+    const userId = req.user?._id;
+  
+    // Verificar si se pasó un ID de usuario en el token
+    if (!userId) {
+      throw new BadRequestException('No se encontró el ID de usuario en el token.');
+    }
+  
+    // Obtener el usuario
+    const user = await this.usersService.findOne(userId);
+  
+    // Verificar si el usuario existe
+    if (!user) {
+      throw new NotFoundException(`Usuario con ID ${userId} no encontrado`);
+    }
+  
+    // Verificar si la contraseña actual es correcta
+    const isPasswordValid = await this.authService.comparePasswords(body.currentPassword, user.password);
+  
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('La contraseña actual es incorrecta');
+    }
+  
+    // Validar la nueva contraseña (por ejemplo, longitud mínima de 8 caracteres)
+    if (body.newPassword.length < 8) {
+      throw new BadRequestException('La nueva contraseña debe tener al menos 8 caracteres');
+    }
+  
+    // Actualizar la contraseña con la nueva
+    const updatedUser = await this.usersService.updatePassword(userId, body.newPassword);
+  
+    if (!updatedUser) {
+      throw new NotFoundException(`No se pudo actualizar la contraseña del usuario con ID ${userId}`);
+    }
+  
+    return { message: 'Contraseña actualizada correctamente ✅' };
+  }
+  
   @Get()
   findAll() {
     return this.usersService.findAll();
@@ -140,7 +179,7 @@ export class UsersController {
     @Request() req,
   ) {
     const rol = req.user?.role;
-    if (rol !== 'admin') {
+    if (rol === 'alumno') {
       throw new UnauthorizedException('Solo el administrador puede actualizar usuarios por ID');
     }
 
