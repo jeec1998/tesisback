@@ -16,7 +16,7 @@ import { SubjectsService } from './subjects.service';
 import { CreateSubjectDto } from './dto/create-subjects.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { UpdateSubjectDto } from './dto/update-subjects.dto';
-import { isValidObjectId } from 'mongoose';
+import { isValidObjectId, Types } from 'mongoose';
 @Controller('Subjects')
 export class SubjectsController {
   constructor(private readonly SubjectsService: SubjectsService) { }
@@ -48,11 +48,8 @@ export class SubjectsController {
   @UseGuards(AuthGuard('jwt'))
   @Get('usuario/:id')
   async findByUsuario(@Param('id') id: string) {
-    if (!isValidObjectId(id)) {
-      throw new BadRequestException('ID inválido');
-    }
 
-    return this.SubjectsService.findByCreatedBy(id);
+    return this.SubjectsService.findByCreatedBy(new Types.ObjectId(id));
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -72,9 +69,6 @@ export class SubjectsController {
   @UseGuards(AuthGuard('jwt'))
   @Get(':id')
   async findOne(@Param('id') id: string, @Req() req: any) {
-    if (!isValidObjectId(id)) {
-      throw new BadRequestException('ID inválido');
-    }
 
     return this.SubjectsService.findOne(id);
   }
@@ -86,15 +80,12 @@ export class SubjectsController {
     @Body() createSubjectDto: CreateSubjectDto,
     @Req() req: any,
   ) {
-    if (!isValidObjectId(userId)) {
-      throw new BadRequestException('ID de usuario inválido');
-    }
 
     if (!req.user || req.user.role !== 'admin') {
       throw new UnauthorizedException('Solo administradores pueden asignar materias a cualquier usuario');
     }
 
-    return this.SubjectsService.create(createSubjectDto, userId);
+    return this.SubjectsService.create(createSubjectDto, new Types.ObjectId(userId));
   }
 
   @UseGuards(AuthGuard('jwt'))

@@ -27,7 +27,6 @@ export class AuthController {
       throw new UnauthorizedException('Credenciales inválidas');
     }
   
-    console.log('✅ Usuario que entra al token:', user);
     return this.authService.login(user);
     
   }

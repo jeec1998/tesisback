@@ -70,7 +70,11 @@ export class DropboxService {
     return this.uploadModel.find({ subjectId }).exec();  // Filtra los recursos por subjectId
   }
 
+  async getResourcesBySubtopic(subtopicId: string): Promise<Upload[]> {
+    return this.uploadModel.find({ subtopicId }).exec();  // Filtra los recursos por subtopicId 
+  }
 
-
-
+  async findManyBySubtopicIds(subtopicIds: string[]): Promise<UploadDocument[]> {
+    return this.uploadModel.find({ subtopicId: { $in: subtopicIds } }).exec();  // Filtra los recursos por subtopicId
+  }
 }

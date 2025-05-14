@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Subject, SubjectDocument } from './entities/subject.entity';
 import { CreateSubjectDto } from './dto/create-subjects.dto';
 import { UpdateSubjectDto } from './dto/update-subjects.dto';
@@ -11,7 +11,7 @@ export class SubjectsService {
     @InjectModel(Subject.name) private SubjectModel: Model<SubjectDocument>,
   ) { }
 
-  async create(createSubjectDto: CreateSubjectDto, userId: string): Promise<Subject> {
+  async create(createSubjectDto: CreateSubjectDto, userId: Types.ObjectId): Promise<Subject> {
     const { name, curso } = createSubjectDto;
 
     const existing = await this.SubjectModel.findOne({ name, curso });
@@ -34,8 +34,8 @@ export class SubjectsService {
     return this.SubjectModel.find().populate('createdBy', 'name email').exec();
   }
 
-  async findOne(id: string): Promise<Subject> {
-    const Subject = await this.SubjectModel.findById(id);
+  async findOne(id: string): Promise<SubjectDocument> {
+    const Subject = await this.SubjectModel.findById(new Types.ObjectId(id));
     if (!Subject) {
       throw new NotFoundException('Tema no encontrado');
     }
@@ -43,7 +43,7 @@ export class SubjectsService {
   }
 
 
-  async update(id: string, updateSubjectDto: UpdateSubjectDto, userId: string): Promise<Subject> {
+  async update(id: string, updateSubjectDto: UpdateSubjectDto, userId: Types.ObjectId): Promise<Subject> {
     const Subject = await this.SubjectModel.findById(id);
 
     if (!Subject) {
@@ -51,7 +51,7 @@ export class SubjectsService {
     }
 
 
-    if (Subject.createdBy.toString() !== userId) {
+    if (Subject.createdBy.toString() !== userId.toString()) {
       throw new ForbiddenException('No tienes permisos para actualizar este tema');
     }
 
@@ -62,17 +62,17 @@ export class SubjectsService {
   }
 
 
-  async findByCreatedBy(userId: string): Promise<Subject[]> {
+  async findByCreatedBy(userId: Types.ObjectId): Promise<Subject[]> {
     return this.SubjectModel.find({ createdBy: userId }).exec();
   }
 
-  async remove(id: string, userId: string): Promise<Subject | null> {
+  async remove(id: string, userId: Types.ObjectId): Promise<Subject | null> {
     const Subject = await this.SubjectModel.findById(id);
     if (!Subject) {
       throw new NotFoundException('Tema no encontrado');
     }
 
-    if (Subject.createdBy.toString() !== userId) {
+    if (Subject.createdBy.toString() !== userId.toString()) {
       throw new ForbiddenException('No tienes permisos para eliminar este tema');
     }
 

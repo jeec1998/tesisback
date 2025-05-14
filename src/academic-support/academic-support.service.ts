@@ -2,11 +2,30 @@ import { Injectable } from '@nestjs/common';
 import { CreateAcademicSupportDto } from './dto/create-academic-support.dto';
 import { UpdateAcademicSupportDto } from './dto/update-academic-support.dto';
 import { LangChainService } from 'src/shared/langchain/langchain-service';
+import { GradeService } from 'src/grade/grade.service';
+import { Types } from 'mongoose';
+import { TopicsService } from 'src/topics/topics.service';
+import { UsersService } from 'src/users/users.service';
+import { Subtopic, TopicDocument } from 'src/topics/entities/topic.entity';
+import { SubjectsService } from 'src/subjects/subjects.service';
+import { GradeDocument } from 'src/grade/entities/grade.entity';
+import { DropboxService } from 'src/dropbox/dropbox.service';
+import { UploadDocument } from 'src/dropbox/entities/dropbox.entity';
+import { InjectModel } from '@nestjs/mongoose';
+import { AcademicSupport, AcademicSupportDocument } from './entities/academic-support.entity';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class AcademicSupportService {
   constructor(
     private readonly langChainService: LangChainService,
+    private readonly gradeService: GradeService,
+    private readonly topicService: TopicsService,
+    private readonly userService: UsersService,
+    private readonly subjectService: SubjectsService,
+    private readonly uploadService: DropboxService,
+    @InjectModel(AcademicSupport.name) private academicSupportModel: Model<AcademicSupportDocument>
+
   ) { }
   create(createAcademicSupportDto: CreateAcademicSupportDto) {
     return 'This action adds a new academicSupport';
@@ -29,153 +48,59 @@ export class AcademicSupportService {
   }
 
   async generateByTopic(topicId: string) {
-    // Debes llamar a todos los estudiantes que necesitan refuerzo academico del tema (todos los estudiantes que tienen menos de 9 puntos)
-    // Iterar sobre los estudiantes y generar el refuerzo academico para cada uno
-    // En cada iteracion debes llamar a la BD para obtener los datos necesarios
-    // tema, subtemas, estilosDeAprendizaje, recursosDisponibles
-    // En cada iteracion debes llamar a la IA para generar el refuerzo academico
-    await this.generateWithIa(/* tema, subtemas, estilosDeAprendizaje, recursosDisponibles */);
-    return 'Refuerzo académico generado';
+    const topic = await this.topicService.findOne(topicId);
+    const builtTopic = await this.buildTopic(topic);
+    const gradesByTopic = await this.gradeService.findByTopicId(new Types.ObjectId(topicId));
+    const generalSubtopics = topic.subtopics;
+    const filterGradesBelowThreshold = this.gradeService.filterGradesBelowThreshold(gradesByTopic);
+    const studentsBelowThreshold = await this.userService.findManyByField('_id', filterGradesBelowThreshold.map(grade => new Types.ObjectId(grade.userId)));
+    const generalResourcesBySubtopicIds = await this.uploadService.findManyBySubtopicIds(generalSubtopics.map(subtopic => subtopic._id.toString()));
+    const response: any = [];
+    studentsBelowThreshold.forEach(async student => {
+      const subtopicsBelowThreshold = this.buildSubtopicsBelowThreshold(generalSubtopics, gradesByTopic.filter(grade => grade.userId === (student._id as any).toString()));
+      const resourcesBySubtopic = this.buildResourcesBySubtopic(subtopicsBelowThreshold, generalResourcesBySubtopicIds);
+      const generated = await this.generateWithIa(builtTopic, subtopicsBelowThreshold, student.estilo || [], resourcesBySubtopic);
+      const data = {
+        student: {
+          id: (student._id as any).toString(),
+          nombre: student.name,
+          email: student.email,
+          estilosDeAprendizaje: student.estilo,
+        },
+        topic: {
+          id: (topic._id as any).toString(),
+          materia: builtTopic.materia,
+          titulo: builtTopic.titulo,
+        },
+        subtopics: subtopicsBelowThreshold.map(subtopic => ({
+          id: subtopic.id,
+          titulo: subtopic.titulo,
+          nota: subtopic.nota,
+          notaMaxima: subtopic.notaMaxima,
+        })),
+        resourcesBySubtopic: resourcesBySubtopic.map(resource => ({
+          id: resource.id,
+          titulo: resource.titulo,
+          tipo: resource.tipo,
+          descripcion: resource.descripcion,
+          subtema: resource.subtema,
+        })),
+        generated,
+      };
+      response.push(data);
+      await this.academicSupportModel.create(data);
+      // Enviamos el mensaje cuando se genera el recurso
+    });
+    return response;
   }
 
-  async generateWithIa(/* tema, subtemas, estilosDeAprendizaje, recursosDisponibles */) {
-    const prompt = this.buildPrompt();
-    const response = await this.langChainService.generate(prompt); // Esta respuesta viene en formato JSON
-    const parsedResponse = JSON.parse(response); // Parsear la respuesta JSON
-    // Aquí puedes guardar la respuesta en la base de datos
-    // Puedes enviar la respuesta al estudiante por correo electrónico o por otro medio
-    // Puedes enviar la respuesta al profesor por correo electrónico o por otro medio
-    return parsedResponse; // Deberías responder con la respuesta generada por la IA
+  async generateWithIa(topic: { id: string, materia: string, titulo: string }, subtopics: { id: string, titulo: string, nota: number, notaMaxima: number }[], estilosDeAprendizaje: string[], resourcesBySubtopic: { id: string, titulo: string, tipo: string, descripcion: string, subtema: string | null }[]) {
+    const prompt = this.buildPrompt(topic, subtopics, estilosDeAprendizaje, resourcesBySubtopic);
+    return await this.langChainService.generate(prompt); // Esta respuesta viene en formato JSON
   }
 
 
-  buildPrompt(/* tema, subtemas, estilosDeAprendizaje, recursosDisponibles */): string {
-    const subtemas = [
-      {
-        titulo: 'Funciones Lineales',
-        descripcion: 'Introducción a las funciones lineales, representación gráfica y su interpretación en situaciones cotidianas.',
-        nota: 1.5,
-        notaMaxima: 3,
-      },
-      {
-        titulo: 'Inecuaciones de primer grado',
-        descripcion: 'Resolución de inecuaciones de primer grado y su representación en la recta numérica.',
-        nota: 1,
-        notaMaxima: 3,
-      },
-      {
-        titulo: 'Sistema de ecuaciones lineales',
-        descripcion: 'Métodos de resolución de sistemas de dos ecuaciones lineales con dos incógnitas: método gráfico, sustitución y reducción.',
-        nota: 2,
-        notaMaxima: 4,
-      },
-    ];
-
-    const tema = {
-      materia: 'Matemáticas',
-      titulo: 'Refuerzo de Álgebra',
-      descripcion: 'Refuerzo de subtemas clave en Álgebra relacionados a funciones lineales, inecuaciones y sistemas de ecuaciones.',
-    };
-
-    const estilosDeAprendizaje = [
-      'Activo',
-    ];
-
-    const recursosDisponibles = [
-      {
-        id: 'R1',
-        titulo: 'Guía práctica de funciones lineales',
-        tipo: 'PDF',
-        descripcion: 'Documento que explica paso a paso cómo construir, representar y analizar funciones lineales, incluyendo ejemplos prácticos.',
-        subtema: 'Funciones Lineales',
-      },
-      {
-        id: 'R2',
-        titulo: 'Video: Resolución de Inecuaciones',
-        tipo: 'Video',
-        descripcion: 'Clase grabada donde se resuelven inecuaciones de primer grado y se explican diferentes métodos de representación.',
-        subtema: 'Inecuaciones de primer grado',
-      },
-      {
-        id: 'R3',
-        titulo: 'Podcast: Entendiendo sistemas de ecuaciones',
-        tipo: 'Audio',
-        descripcion: 'Podcast educativo que explica de manera sencilla cómo resolver sistemas de ecuaciones lineales mediante sustitución y reducción.',
-        subtema: 'Sistema de ecuaciones lineales',
-      },
-      {
-        id: 'R4',
-        titulo: 'Infografía de funciones lineales',
-        tipo: 'Imagen',
-        descripcion: 'Infografía visual que resume las principales características de las funciones lineales y ejemplos de la vida diaria.',
-        subtema: 'Funciones Lineales',
-      },
-      {
-        id: 'R5',
-        titulo: 'Artículo científico: Modelos lineales',
-        tipo: 'Texto',
-        descripcion: 'Artículo teórico avanzado sobre aplicaciones de modelos lineales en ciencias e ingeniería. (Más orientado a teóricos).',
-        subtema: 'Funciones Lineales',
-      },
-      {
-        id: 'R6',
-        titulo: 'Aplicación interactiva: Resuelve sistemas',
-        tipo: 'Interactivo',
-        descripcion: 'Aplicación online que permite practicar la resolución de sistemas de ecuaciones de manera interactiva mediante sustitución y eliminación.',
-        subtema: 'Sistema de ecuaciones lineales',
-      },
-      {
-        id: 'R7',
-        titulo: 'Documento de ejercicios resueltos de inecuaciones',
-        tipo: 'PDF',
-        descripcion: 'Ejercicios prácticos de inecuaciones de primer grado con resolución paso a paso.',
-        subtema: 'Inecuaciones de primer grado',
-      },
-      {
-        id: 'R8',
-        titulo: 'Galería de gráficos de funciones lineales',
-        tipo: 'Imagen',
-        descripcion: 'Colección de imágenes de gráficas de funciones lineales con diferentes pendientes y ordenadas al origen.',
-        subtema: 'Funciones Lineales',
-      },
-      {
-        id: 'R9',
-        titulo: 'Tutorial de lectura matemática avanzada',
-        tipo: 'Texto',
-        descripcion: 'Guía teórica enfocada en interpretación avanzada de expresiones algebraicas. (Orientado a teóricos).',
-        subtema: 'Sistema de ecuaciones lineales',
-      },
-      {
-        id: 'R10',
-        titulo: 'Video: Sistemas de ecuaciones en situaciones reales',
-        tipo: 'Video',
-        descripcion: 'Video educativo que aplica sistemas de ecuaciones a problemas cotidianos como compras, mezclas de productos y planificación.',
-        subtema: 'Sistema de ecuaciones lineales',
-      },
-      {
-        id: 'R11',
-        titulo: 'Simulador de resolución de inecuaciones',
-        tipo: 'Interactivo',
-        descripcion: 'Simulador online donde los estudiantes resuelven gráficamente inecuaciones moviendo los elementos en la recta numérica.',
-        subtema: 'Inecuaciones de primer grado',
-      },
-      {
-        id: 'R12',
-        titulo: 'Audio: Consejos para estudiar matemáticas',
-        tipo: 'Audio',
-        descripcion: 'Podcast breve con consejos prácticos para mejorar el aprendizaje de matemáticas mediante métodos activos.',
-        subtema: 'Funciones Lineales',
-      },
-      {
-        id: 'R13',
-        titulo: 'Ensayo: Historia del Álgebra',
-        tipo: 'Texto',
-        descripcion: 'Ensayo histórico que describe el origen y evolución del álgebra a lo largo de la historia.',
-        subtema: 'Funciones Lineales',
-      }
-    ];
-
-
+  buildPrompt(tema: { id: string, materia: string, titulo: string }, subtemas: { id: string, titulo: string, nota: number, notaMaxima: number }[], estilosDeAprendizaje: string[], recursosDisponibles: { id: string, titulo: string, tipo: string, descripcion: string, subtema: string | null }[]): string {
     const prompt = `Eres un educador especializado en segundo año de bachillerato en Ecuador, experto en metodologías adaptadas a los estilos de aprendizaje según el cuestionario Honey-Alonso (CHAEA).
 
       Te proporcionaré la siguiente información:
@@ -259,4 +184,55 @@ export class AcademicSupportService {
 
     return prompt;
   }
+
+  private async buildTopic(topic: TopicDocument) {
+    const subject = await this.subjectService.findOne(topic.subject._id.toString());
+    return {
+      id: (topic._id as any).toString(),
+      materia: subject.name,
+      titulo: topic.name,
+    }
+  }
+
+  private buildSubtopicsBelowThreshold(subtopics: Subtopic[], gradesByUser: GradeDocument[]) {
+    // Inicializar un array donde se almacenarán los subtemas con calificaciones por debajo del máximo
+    const subtopicsBelowThreshold: { id: string, titulo: string, nota: number, notaMaxima: number }[] = [];
+
+    // Iterar sobre cada GradeDocument (calificación por usuario)
+    gradesByUser.forEach(gradeDoc => {
+      // Iterar sobre cada subtema en la calificación
+      gradeDoc.subTopics.forEach(subTopic => {
+        // Buscar el subtema correspondiente en la lista de subtemas generales
+        const subtopic = subtopics.find(st => st._id.toString() === subTopic.subTopicId);
+
+        // Si se encuentra el subtema y su calificación es menor al máximo
+        if (subtopic && (subTopic.grade < subtopic.maxScore)) {
+          // Agregar el subtema con la calificación al resultado
+          subtopicsBelowThreshold.push({
+            id: subtopic._id.toString(),
+            titulo: subtopic.name,
+            nota: subTopic.grade,
+            notaMaxima: subtopic.maxScore,
+          });
+        }
+      });
+    });
+
+    return subtopicsBelowThreshold;
+  }
+
+  private buildResourcesBySubtopic(subtopics: { id: string, titulo: string, nota: number, notaMaxima: number }[], resources: UploadDocument[]) {
+    return resources.map(resource => {
+      const subtopic = subtopics.find(st => st.id === resource.subtopicId.toString());
+      return {
+        id: (resource._id as any).toString(),
+        titulo: resource.fileName,
+        tipo: resource.fileType,
+        descripcion: resource.description,
+        subtema: subtopic ? subtopic.titulo : null,
+      }
+    }
+    );
+  }
+
 }

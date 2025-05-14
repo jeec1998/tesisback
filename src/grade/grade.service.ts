@@ -79,4 +79,22 @@ export class GradeService {
     }
     return deletedGrade;
   }
+
+  async findByTopicId(topicId: Types.ObjectId): Promise<GradeDocument[]> {
+    const grades = await this.gradeModel.find({ topicId: topicId.toString() }).exec();
+    if (!grades || grades.length === 0) {
+      throw new Error('No grades found for this topic');
+    }
+    return grades;
+  }
+
+  filterGradesBelowThreshold(grades: GradeDocument[]) {
+    return grades.filter(grade => grade.totalGrade < 10);
+  }
+
+  filterSubtopicGradesBelowThreshold(grades: GradeDocument[], maxScore: number) {
+    return grades.filter(grade => {
+      return grade.subTopics.some(subTopic => subTopic.grade < maxScore);
+    });
+  }
 }

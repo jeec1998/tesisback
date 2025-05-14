@@ -36,7 +36,7 @@ export class TopicsService {
     return this.topicModel.find().populate('subject').exec();
   }
 
-  async findOne(id: string): Promise<Topic> {
+  async findOne(id: string): Promise<TopicDocument> {
     const topic = await this.topicModel.findById(id).populate('subject');
     if (!topic) {
       throw new NotFoundException('Tema no encontrado');

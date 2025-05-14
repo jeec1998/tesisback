@@ -94,5 +94,7 @@ export class UsersService {
     return this.userModel.findByIdAndUpdate(userId, { password: hashedPassword }, { new: true });
   }
   
-
+  async findManyByField(field: string, value: any): Promise<UserDocument[]> {
+    return this.userModel.find({ [field]: value }).exec();
+  }
 }

@@ -15,7 +15,7 @@ export class Grade {
   // Aseguramos que no se genere un _id dentro del array de subTopicIds
   @Prop({
     type: [{
-      subTopicId: { type: String, ref: 'Subtopic', required: true },
+      subTopicId: { type: String, required: true },
       grade: { type: Number, required: true },
       recoveryGrade: { type: Number, required: false }
     }],

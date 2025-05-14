@@ -36,7 +36,6 @@ export class DropboxAuthService {
     const data = await response.json();
     this.accessToken = data.access_token;
 
-    console.log('Nuevo access token refrescado ✅');
     return this.accessToken;
   }
 

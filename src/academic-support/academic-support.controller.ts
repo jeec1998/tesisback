@@ -34,7 +34,7 @@ export class AcademicSupportController {
 
   @Get(':topicId/generate')
   async generateWithIa(@Param('topicId') topicId: string) {
-    const response = await this.academicSupportService.generateWithIa(/** topicId */);
+    const response = await this.academicSupportService.generateByTopic(topicId);
     return {
       message: 'Refuerzo académico generado',
       data: response,
