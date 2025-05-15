@@ -45,36 +45,38 @@ export class UsersController {
 
 
 
-  @Post()
-  async create(@Body() createUserDto: CreateUserDto) {
-    try {
-      // Generar una contraseña y nombre de usuario aleatorio
-      const password = crypto.randomBytes(8).toString('hex');  // 16 bytes para mayor seguridad
-      const username = crypto.randomBytes(8).toString('hex');
-      
-      // Asignar valores al DTO
-      createUserDto.nombreUsuario = username;
-      createUserDto.password = password;
-  
-      // Crear el usuario
-      const user = await this.usersService.create(createUserDto);
-  
-      // Generar el enlace de WhatsApp si tiene teléfono, sino enviar un mensaje vacío.
-      let whatsappLink = '';
-      if (user.telefono) {
-        whatsappLink = this.generateWhatsappLink(user.telefono, user.nombreUsuario, user.password);
-      }
-  
-      // Retornar la respuesta con el mensaje y enlace de WhatsApp (si existe)
-      return {
-        message: 'Usuario creado correctamente',
-        link: whatsappLink || null,  // Si no tiene teléfono, el link será null
-      };
-      
-    } catch (error) {
-      return { message: 'Error al crear el usuario', error: error.message };
+ @Post()
+async create(@Body() createUserDto: CreateUserDto) {
+  try {
+    // Generar una contraseña y nombre de usuario aleatorio
+    const newpassword = crypto.randomBytes(8).toString('hex');  // 16 bytes para mayor seguridad
+    const username = crypto.randomBytes(8).toString('hex');
+    
+    // Asignar valores al DTO
+    createUserDto.nombreUsuario = username;
+    createUserDto.password = newpassword;
+
+    // Crear el usuario
+    const user = await this.usersService.create(createUserDto);
+
+    // Generar el enlace de WhatsApp si tiene teléfono, sino enviar un mensaje vacío.
+    let whatsappLink = '';
+    if (user.telefono) {
+      // Usar `user.password` en lugar de `user.newpassword`
+      whatsappLink = this.generateWhatsappLink(user.telefono, user.nombreUsuario, newpassword);
     }
+
+    // Retornar la respuesta con el mensaje y enlace de WhatsApp (si existe)
+    return {
+      message: 'Usuario creado correctamente',
+      link: whatsappLink || null,  // Si no tiene teléfono, el link será null
+    };
+    
+  } catch (error) {
+    return { message: 'Error al crear el usuario', error: error.message };
   }
+}
+
   
 
 

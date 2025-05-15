@@ -5,6 +5,15 @@ import { Grade, GradeDocument } from './entities/grade.entity';
 import { CreateGradeDto } from './dto/create-grade.dto';
 import { Topic, TopicDocument } from 'src/topics/entities/topic.entity';
 
+export interface GradeSubtopicData {
+  _id: unknown;
+  userId: string;
+  subjectId: string;
+  topicId: string;
+  subtopicId: string;
+  grade: number;
+}
+
 @Injectable()
 export class GradeService {
   constructor(
@@ -58,7 +67,7 @@ export class GradeService {
     if (totalGrade > 10) {
       throw new BadRequestException('Total grade cannot exceed 10');
     }
-    const createdGrade = new this.gradeModel({...createGradeDto, totalGrade});
+    const createdGrade = new this.gradeModel({ ...createGradeDto, totalGrade });
     return createdGrade.save();
   }
 
@@ -81,12 +90,34 @@ export class GradeService {
   }
 
   async findByTopicId(topicId: Types.ObjectId): Promise<GradeDocument[]> {
-    const grades = await this.gradeModel.find({ topicId: topicId.toString() }).exec();
-    if (!grades || grades.length === 0) {
-      throw new Error('No grades found for this topic');
-    }
-    return grades;
+    return this.gradeModel.find({ topicId: topicId.toString() }).exec();
   }
+
+  buildListGroupedBySubtopics(grades: GradeDocument[]) {
+    const data: GradeSubtopicData[] = [];
+
+    // Iterar sobre cada calificación (Grade)
+    grades.forEach(grade => {
+      // Iterar sobre cada subtema en la calificación
+      grade.subTopics.forEach(subTopic => {
+        // Crear un nuevo objeto con la información deseada
+        const gradeData = {
+          _id: grade._id,            // ID de la calificación
+          userId: grade.userId,      // ID del usuario
+          subjectId: grade.subjectId, // ID de la materia
+          topicId: grade.topicId,    // ID del tema
+          subtopicId: subTopic.subTopicId, // ID del subtema
+          grade: subTopic.grade      // Calificación del subtema
+        };
+
+        // Agregar el objeto a la lista de datos
+        data.push(gradeData);
+      });
+    });
+
+    return data;
+  }
+
 
   filterGradesBelowThreshold(grades: GradeDocument[]) {
     return grades.filter(grade => grade.totalGrade < 10);

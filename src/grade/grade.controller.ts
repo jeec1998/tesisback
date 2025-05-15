@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Param, Patch, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Delete, UseGuards } from '@nestjs/common';
 import { GradeService } from './grade.service';
 import { Types } from 'mongoose';
 import { CreateGradeDto } from './dto/create-grade.dto';
+import { UserDefinedMessageSubscriptionInstance } from 'twilio/lib/rest/api/v2010/account/call/userDefinedMessageSubscription';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('grades')
 export class GradeController {
@@ -24,7 +26,7 @@ export class GradeController {
       return { error: error.message };
     }
   }
-  
+  @UseGuards(AuthGuard('jwt'))
   @Post()
   create(@Body() createGradeDto: CreateGradeDto) {
     return this.gradeService.create(createGradeDto);
@@ -38,5 +40,12 @@ export class GradeController {
   @Delete(':id')
   delete(@Param('id') id: string) {
     return this.gradeService.delete(new Types.ObjectId(id));
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('topic/:topicId')
+  async findByTopic(@Param('topicId') topicId: string) {
+    const gradesByTopic = await this.gradeService.findByTopicId(new Types.ObjectId(topicId));
+    return this.gradeService.buildListGroupedBySubtopics(gradesByTopic);
   }
 }

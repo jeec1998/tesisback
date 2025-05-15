@@ -21,17 +21,21 @@ import { isValidObjectId, Types } from 'mongoose';
 export class SubjectsController {
   constructor(private readonly SubjectsService: SubjectsService) { }
 
-  @UseGuards(AuthGuard('jwt'))
-  @Post()
-  create(@Body() createSubjectDto: CreateSubjectDto, @Req() req: any) {
-    if (!req.user || !req.user._id) {
-      throw new UnauthorizedException('Usuario no autenticado');
-    }
-
-    return this.SubjectsService.create(createSubjectDto, req.user._id);
+ @UseGuards(AuthGuard('jwt'))
+@Post()
+create(@Body() createSubjectDto: CreateSubjectDto, @Req() req: any) {
+  if (!req.user || !req.user._id) {
+    throw new UnauthorizedException('Usuario no autenticado');
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  // Aquí aseguramos que el userId se guarde como un ObjectId
+  const userId = new Types.ObjectId(req.user._id);  // Convertir el userId a ObjectId
+
+  return this.SubjectsService.create(createSubjectDto, userId);
+}
+
+
+   @UseGuards(AuthGuard('jwt'))
   @Put(':id')
   async update(
     @Param('id') id: string,
@@ -42,15 +46,21 @@ export class SubjectsController {
       throw new BadRequestException('ID inválido');
     }
 
-    return this.SubjectsService.update(id, updateSubjectDto, req.user._id);
+    // Asegurarse de que el userId se guarde como ObjectId para la actualización
+    const userId = new Types.ObjectId(req.user._id);  // Convertir el userId a ObjectId
+
+    return this.SubjectsService.update(id, updateSubjectDto, userId);
   }
 
-  @UseGuards(AuthGuard('jwt'))
-  @Get('usuario/:id')
-  async findByUsuario(@Param('id') id: string) {
-
-    return this.SubjectsService.findByCreatedBy(new Types.ObjectId(id));
+@UseGuards(AuthGuard('jwt'))
+@Get('usuario/:id')
+async findByUsuario(@Param('id') id: string) {
+  if (!Types.ObjectId.isValid(id)) {
+    throw new BadRequestException('ID de usuario no válido');
   }
+  const userId = new Types.ObjectId(id);  // Convertir a ObjectId
+  return this.SubjectsService.findByCreatedBy(userId);
+}
 
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
@@ -100,7 +110,7 @@ export class SubjectsController {
     }
 
     if (!req.user || req.user.role !== 'admin') {
-      throw new UnauthorizedException('Solo administradores pueden editar cualquier meateria');
+      throw new UnauthorizedException('Solo administradores pueden editar cualquier materia');
     }
 
     return this.SubjectsService.updateAsAdmin(id, updateSubjectDto);

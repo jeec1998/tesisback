@@ -20,7 +20,7 @@ import { GradeModule } from './grade/grade.module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('mongo'),
+        uri: configService.get<string>('MONGO_DB'),
       }),
       inject: [ConfigService],
     }),

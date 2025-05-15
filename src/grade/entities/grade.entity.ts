@@ -22,7 +22,7 @@ export class Grade {
     required: true,
     _id: false  // Esto desactiva la creación de _id en cada subdocumento
   })
-  subTopics: { subTopicId: String, grade: number }[];
+  subTopics: { subTopicId: string, grade: number }[];
 
   @Prop({ type: Number, required: true }) // Calificación general
   totalGrade: number;
