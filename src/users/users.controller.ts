@@ -6,6 +6,7 @@ import { AuthService } from '../auth/auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import { SubjectsService } from '../subjects/subjects.service';
 import * as crypto from 'crypto'; // Para generar datos aleatorios
+import { Types } from 'mongoose';
 
 @Controller('users')
 export class UsersController {
@@ -76,6 +77,49 @@ async create(@Body() createUserDto: CreateUserDto) {
     return { message: 'Error al crear el usuario', error: error.message };
   }
 }
+@Post('from-subject/:subjectId')
+async createUserFromSubject(
+  @Param('subjectId') subjectId: string,
+  @Body() createUserDto: CreateUserDto,
+) {
+  if (!Types.ObjectId.isValid(subjectId)) {
+    throw new BadRequestException('ID de materia inválido');
+  }
+
+  // Generar usuario y contraseña aleatorios
+  const newPassword = crypto.randomBytes(8).toString('hex');
+  const username = crypto.randomBytes(8).toString('hex');
+
+  createUserDto.nombreUsuario = username;
+  createUserDto.password = newPassword;
+  createUserDto.createbysubject = new Types.ObjectId(subjectId).toHexString();
+
+  const user = await this.usersService.create(createUserDto);
+
+  let whatsappLink = '';
+  if (user.telefono) {
+    whatsappLink = this.generateWhatsappLink(user.telefono, user.nombreUsuario, newPassword);
+  }
+
+  return {
+    message: 'Usuario creado correctamente con materia asignada',
+    link: whatsappLink || null,
+  };
+}
+@UseGuards(AuthGuard('jwt'))
+@Get(':userId/materia')
+async obtenerMateriaUsuario(@Param('userId') userId: string) {
+  if (!Types.ObjectId.isValid(userId)) {
+    throw new BadRequestException('ID inválido');
+  }
+  const userObjectId = new Types.ObjectId(userId);
+  const usuarioConMateria = await this.usersService.getMateriasDelUsuario(userObjectId);
+
+  if (!usuarioConMateria) throw new NotFoundException('Usuario no encontrado');
+
+  return usuarioConMateria.createbysubject || null; // devuelve la materia (populada) o null
+}
+
 
   
 
@@ -116,6 +160,7 @@ async create(@Body() createUserDto: CreateUserDto) {
   findAlumnosByMateria(@Param('materiaId') materiaId: string) {
     return this.usersService.findAlumnosByMateria(materiaId);
   }
+
   @UseGuards(AuthGuard('jwt'))
   @Put('cambiar-contrasena')
   async cambiarContrasena(@Request() req, @Body() body: { currentPassword: string; newPassword: string }) {

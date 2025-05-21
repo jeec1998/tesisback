@@ -16,11 +16,12 @@ export class AcademicSupportController {
   findAll() {
     return this.academicSupportService.findAll();
   }
+@Get(':id')
+async findOne(@Param('id') id: string) {
+  return this.academicSupportService.findByIdOrStudentId(id);
+}
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.academicSupportService.findOne(+id);
-  }
+
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateAcademicSupportDto: UpdateAcademicSupportDto) {

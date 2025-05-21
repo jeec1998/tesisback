@@ -6,8 +6,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthService } from '../auth/auth.service';
 import * as bcrypt from 'bcrypt';
-
-
+import { Types } from 'mongoose';
 
 @Injectable()
 export class UsersService {
@@ -97,4 +96,8 @@ export class UsersService {
   async findManyByField(field: string, value: any): Promise<UserDocument[]> {
     return this.userModel.find({ [field]: value }).exec();
   }
+  async getMateriasDelUsuario(userId: Types.ObjectId) {
+  return this.userModel.findById(userId).populate('createbysubject').exec();
+}
+
 }

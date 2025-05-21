@@ -35,9 +35,28 @@ export class AcademicSupportService {
     return `This action returns all academicSupport`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} academicSupport`;
+async findOne(id: string) {
+  if (!Types.ObjectId.isValid(id)) {
+    throw new Error('ID inválido');
   }
+
+  const record = await this.academicSupportModel.findById(id).exec();
+
+  if (!record) {
+    throw new Error(`AcademicSupport con ID ${id} no encontrado`);
+  }
+
+  return record;
+}
+async findByIdOrStudentId(id: string) {
+  return this.academicSupportModel.findOne({
+    $or: [
+      { _id: id },
+      { 'student.id': id }
+    ]
+  }).exec();
+}
+
 
   update(id: number, updateAcademicSupportDto: UpdateAcademicSupportDto) {
     return `This action updates a #${id} academicSupport`;
@@ -78,12 +97,21 @@ export class AcademicSupportService {
           nota: subtopic.nota,
           notaMaxima: subtopic.notaMaxima,
         })),
+        gradesByTopic: {
+          id: gradesByTopic.map(grade => ({
+            id: (grade._id as any).toString(),
+            userId: (student._id as any).toString(),
+            subtopicId: grade.subTopics.map(subtopic => ({
+              nota: subtopic.grade
+            })),
+          })),
+        },
         resourcesBySubtopic: resourcesBySubtopic.map(resource => ({
           id: resource.id,
           titulo: resource.titulo,
           tipo: resource.tipo,
+          dropbuxUrl: resource.dropboxUrl,
           descripcion: resource.descripcion,
-          subtema: resource.subtema,
         })),
         generated,
       };
@@ -94,13 +122,13 @@ export class AcademicSupportService {
     return response;
   }
 
-  async generateWithIa(topic: { id: string, materia: string, titulo: string }, subtopics: { id: string, titulo: string, nota: number, notaMaxima: number }[], estilosDeAprendizaje: string[], resourcesBySubtopic: { id: string, titulo: string, tipo: string, descripcion: string, subtema: string | null }[]) {
+  async generateWithIa(topic: { id: string, materia: string, titulo: string }, subtopics: { id: string, titulo: string, nota: number, notaMaxima: number }[], estilosDeAprendizaje: string[], resourcesBySubtopic: { id: string, titulo: string, tipo: string, dropboxUrl: string, descripcion: string, subtema: string | null }[]) {
     const prompt = this.buildPrompt(topic, subtopics, estilosDeAprendizaje, resourcesBySubtopic);
     return await this.langChainService.generate(prompt); // Esta respuesta viene en formato JSON
   }
 
 
-  buildPrompt(tema: { id: string, materia: string, titulo: string }, subtemas: { id: string, titulo: string, nota: number, notaMaxima: number }[], estilosDeAprendizaje: string[], recursosDisponibles: { id: string, titulo: string, tipo: string, descripcion: string, subtema: string | null }[]): string {
+  buildPrompt(tema: { id: string, materia: string, titulo: string }, subtemas: { id: string, titulo: string, nota: number, notaMaxima: number }[], estilosDeAprendizaje: string[], recursosDisponibles: { id: string, titulo: string, tipo: string, dropboxUrl: string, descripcion: string, subtema: string | null }[]): string {
     const prompt = `Eres un educador especializado en segundo año de bachillerato en Ecuador, experto en metodologías adaptadas a los estilos de aprendizaje según el cuestionario Honey-Alonso (CHAEA).
 
       Te proporcionaré la siguiente información:
@@ -130,6 +158,7 @@ export class AcademicSupportService {
             "titulo": "Título del recurso",
             "tipo": "Tipo de recurso (PDF, video, audio, imagen, texto, etc.)",
             "descripcion": "Descripción detallada del recurso",
+            "dropbox_url": "URL de Dropbox donde se encuentra el recurso",
             "subtema": "Subtema relacionado"
           }
           // Puede haber más recursos
@@ -228,6 +257,7 @@ export class AcademicSupportService {
         id: (resource._id as any).toString(),
         titulo: resource.fileName,
         tipo: resource.fileType,
+        dropboxUrl: resource.dropboxUrl,
         descripcion: resource.description,
         subtema: subtopic ? subtopic.titulo : null,
       }

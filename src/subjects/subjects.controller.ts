@@ -35,7 +35,7 @@ create(@Body() createSubjectDto: CreateSubjectDto, @Req() req: any) {
 }
 
 
-   @UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'))
   @Put(':id')
   async update(
     @Param('id') id: string,
@@ -99,22 +99,24 @@ async findByUsuario(@Param('id') id: string) {
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Put('admin/:id')
-  async updateAsAdmin(
-    @Param('id') id: string,
-    @Body() updateSubjectDto: UpdateSubjectDto,
-    @Req() req: any,
-  ) {
-    if (!isValidObjectId(id)) {
-      throw new BadRequestException('ID inválido');
-    }
+@Put('admin/:id')
+async updateAsAdmin(
+  @Param('id') id: string,
+  @Body() updateSubjectDto: UpdateSubjectDto,
+  @Req() req: any,
+) {
+  if (!isValidObjectId(id)) {
+    throw new BadRequestException('ID inválido');
+  }
 
     if (!req.user || req.user.role !== 'admin') {
       throw new UnauthorizedException('Solo administradores pueden editar cualquier materia');
     }
+    const userId = new Types.ObjectId(req.user._id);  // Convertir el userId a ObjectId
 
     return this.SubjectsService.updateAsAdmin(id, updateSubjectDto);
-  }
+  
+}
   
   @UseGuards(AuthGuard('jwt'))
   @Delete('admin/:id')
