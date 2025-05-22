@@ -2,15 +2,14 @@
 import { Injectable } from '@nestjs/common';
 import fetch from 'node-fetch';
 import * as dotenv from 'dotenv';
+import { DropboxAuth } from 'dropbox';
 dotenv.config();
 
 @Injectable()
 export class DropboxAuthService {
-  private accessToken: string = process.env.DROPBOX_ACCESS_TOKEN || '';
-
   constructor() {}
 
-  async refreshAccessToken(): Promise<string> {
+/*   async refreshAccessToken(): Promise<string> {
     const clientId = process.env.DROPBOX_APP_KEY;
     const clientSecret = process.env.DROPBOX_APP_SECRET;
     const refreshToken = process.env.DROPBOX_REFRESH_TOKEN;
@@ -37,9 +36,20 @@ export class DropboxAuthService {
     this.accessToken = data.access_token;
 
     return this.accessToken;
-  }
-
-  getAccessToken(): string {
-    return this.accessToken;
+  } */
+  async refreshAccessToken(): Promise<string> {
+    try {
+      const auth = new DropboxAuth({
+        clientId: process.env.DROPBOX_APP_KEY,
+        clientSecret: process.env.DROPBOX_APP_SECRET,
+        refreshToken: process.env.DROPBOX_REFRESH_TOKEN,
+        fetch,
+      });
+      await auth.checkAndRefreshAccessToken();  
+      return auth.getAccessToken();
+    } catch (error) {
+      console.error('Error refreshing Dropbox token:', error);
+      throw new Error('Error refreshing Dropbox token');
+    }
   }
 }
