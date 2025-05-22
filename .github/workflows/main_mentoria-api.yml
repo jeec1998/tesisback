@@ -67,6 +67,9 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_4AB8621EC9A342B5BE7A9AFE399D8678 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_91A6781743A545B4B0F1A1C667EEAAF1 }}
 
+      - name: Set deployment path (optional but recommended)
+        run: echo "WEBSITE_RUN_FROM_PACKAGE=1" >> $GITHUB_ENV
+
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
