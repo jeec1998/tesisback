@@ -56,7 +56,19 @@ async findByIdOrStudentId(id: string) {
     ]
   }).exec();
 }
-
+async findByStudentIdAndTopicId(id: string, topicId: string) {
+  return this.academicSupportModel.findOne({
+    $and: [
+      {
+        $or: [
+          { _id: id },
+          { 'student.id': id },
+        ]
+      },
+      { 'topic.id': topicId }
+    ]
+  }).exec();
+}
 
   update(id: number, updateAcademicSupportDto: UpdateAcademicSupportDto) {
     return `This action updates a #${id} academicSupport`;

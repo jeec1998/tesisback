@@ -40,9 +40,9 @@ export class User {
   })
   telefonorepresentante?: string;
 
- @Prop({ type: [Types.ObjectId], ref: 'Subject', default: [] })
-createbysubject?: Types.ObjectId[];
-//branch: string;
+  @Prop({ type: [Types.ObjectId], ref: 'Subject', default: [] })
+  createbysubject?: Types.ObjectId[];
+
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

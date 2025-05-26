@@ -11,15 +11,24 @@ export class AcademicSupportController {
   create(@Body() createAcademicSupportDto: CreateAcademicSupportDto) {
     return this.academicSupportService.create(createAcademicSupportDto);
   }
+  
+@Get('user/:userId/topic/:topicId')
+async getByUserAndTopic(
+  @Param('userId') userId: string,
+  @Param('topicId') topicId: string,
+) {
+  return this.academicSupportService.findByStudentIdAndTopicId(userId, topicId);
+}
+
 
   @Get()
   findAll() {
     return this.academicSupportService.findAll();
   }
-@Get(':id')
-async findOne(@Param('id') id: string) {
-  return this.academicSupportService.findByIdOrStudentId(id);
-}
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    return this.academicSupportService.findByIdOrStudentId(id);
+  }
 
 
 
@@ -32,7 +41,6 @@ async findOne(@Param('id') id: string) {
   remove(@Param('id') id: string) {
     return this.academicSupportService.remove(+id);
   }
-
   @Get(':topicId/generate')
   async generateWithIa(@Param('topicId') topicId: string) {
     const response = await this.academicSupportService.generateByTopic(topicId);
