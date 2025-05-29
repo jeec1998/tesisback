@@ -176,15 +176,14 @@ async findByStudentIdAndTopicId(id: string, topicId: string) {
           // Puede haber más recursos
         ],
         "actividad_de_refuerzo": {
-          "descripcion_general": "Descripción general de la actividad enfocada en la creación del documento entregable.",
+          "descripcion_general": "Descripción general de la actividad enfocada en el refuerzo que va a optener.",
           "pasos": [
             " Acción específica que debe realizar el estudiante.",
             " Acción específica que debe realizar el estudiante.",
-            " Acción específica que debe realizar el estudiante."
+            " Acción específica que debe realizar el estudiante.",
+            " Tipo de documento que el estudiante debe crear y entregar.",
             // Puede haber más pasos
           ],
-          "tipo_documento_entregable": "Tipo de documento que el estudiante debe crear y entregar (por ejemplo: resumen, ensayo breve, informe, esquema, presentación escrita).",
-          "objetivo": "Objetivo educativo que se busca alcanzar con esta actividad."
         },
         
       }
@@ -214,10 +213,9 @@ async findByStudentIdAndTopicId(id: string, topicId: string) {
       ---
 
       ## 📋 **Notas de optimización**:
-      - **Nuevo campo:** \`"tipo_documento_entregable"\` → Esto deja muy claro **qué tipo** de tarea debe producir el alumno.
       - **Enfoque total** en **tarea en casa** → No en actividades grupales, orales, o de exposición. Siempre escritura + entrega.
       - **Pasos detallados:** Cada paso debe ser súper concreto:  
-        ➔ "Lee el recurso X" → "Subraya las ideas principales" → "Redacta un resumen de una página en Word" → "Entrega por correo o en físico".
+        ➔ "Lee el recurso X" → "Subraya las ideas principales" → "Redacta un resumen de una página en Word" → "Entrega en físico".
       - **Objetivo claro:** Qué se busca reforzar con la actividad.
 
       ---
