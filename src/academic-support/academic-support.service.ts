@@ -178,9 +178,9 @@ async findByStudentIdAndTopicId(id: string, topicId: string) {
         "actividad_de_refuerzo": {
           "descripcion_general": "Descripción general de la actividad enfocada en la creación del documento entregable.",
           "pasos": [
-            "Paso 1: Acción específica que debe realizar el estudiante.",
-            "Paso 2: Acción específica que debe realizar el estudiante.",
-            "Paso 3: Acción específica que debe realizar el estudiante."
+            " Acción específica que debe realizar el estudiante.",
+            " Acción específica que debe realizar el estudiante.",
+            " Acción específica que debe realizar el estudiante."
             // Puede haber más pasos
           ],
           "tipo_documento_entregable": "Tipo de documento que el estudiante debe crear y entregar (por ejemplo: resumen, ensayo breve, informe, esquema, presentación escrita).",
