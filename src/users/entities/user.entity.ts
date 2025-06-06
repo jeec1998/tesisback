@@ -21,6 +21,9 @@ export class User {
   role: 'docente' | 'alumno' | 'admin';
   estado?: string;
 
+  @Prop({ required: false })
+  var?: boolean;
+
   @Prop({
     type: [String],
     enum: ['activo', 'reflexivo', 'teorico', 'pragmatico'],

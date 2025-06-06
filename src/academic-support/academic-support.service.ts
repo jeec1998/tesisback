@@ -25,8 +25,8 @@ export class AcademicSupportService {
     private readonly subjectService: SubjectsService,
     private readonly uploadService: DropboxService,
     @InjectModel(AcademicSupport.name) private academicSupportModel: Model<AcademicSupportDocument>
+  ) {}
 
-  ) { }
   create(createAcademicSupportDto: CreateAcademicSupportDto) {
     return 'This action adds a new academicSupport';
   }
@@ -35,40 +35,42 @@ export class AcademicSupportService {
     return `This action returns all academicSupport`;
   }
 
-async findOne(id: string) {
-  if (!Types.ObjectId.isValid(id)) {
-    throw new Error('ID inválido');
+  async findOne(id: string) {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new Error('ID inválido');
+    }
+
+    const record = await this.academicSupportModel.findById(id).exec();
+
+    if (!record) {
+      throw new Error(`AcademicSupport con ID ${id} no encontrado`);
+    }
+
+    return record;
   }
 
-  const record = await this.academicSupportModel.findById(id).exec();
-
-  if (!record) {
-    throw new Error(`AcademicSupport con ID ${id} no encontrado`);
+  async findByIdOrStudentId(id: string) {
+    return this.academicSupportModel.findOne({
+      $or: [
+        { _id: id },
+        { 'student.id': id }
+      ]
+    }).exec();
   }
 
-  return record;
-}
-async findByIdOrStudentId(id: string) {
-  return this.academicSupportModel.findOne({
-    $or: [
-      { _id: id },
-      { 'student.id': id }
-    ]
-  }).exec();
-}
-async findByStudentIdAndTopicId(id: string, topicId: string) {
-  return this.academicSupportModel.findOne({
-    $and: [
-      {
-        $or: [
-          { _id: id },
-          { 'student.id': id },
-        ]
-      },
-      { 'topic.id': topicId }
-    ]
-  }).exec();
-}
+  async findByStudentIdAndTopicId(id: string, topicId: string) {
+    return this.academicSupportModel.findOne({
+      $and: [
+        {
+          $or: [
+            { _id: id },
+            { 'student.id': id },
+          ]
+        },
+        { 'topic.id': topicId }
+      ]
+    }).exec();
+  }
 
   update(id: number, updateAcademicSupportDto: UpdateAcademicSupportDto) {
     return `This action updates a #${id} academicSupport`;
@@ -87,16 +89,18 @@ async findByStudentIdAndTopicId(id: string, topicId: string) {
     const studentsBelowThreshold = await this.userService.findManyByField('_id', filterGradesBelowThreshold.map(grade => new Types.ObjectId(grade.userId)));
     const generalResourcesBySubtopicIds = await this.uploadService.findManyBySubtopicIds(generalSubtopics.map(subtopic => subtopic._id.toString()));
     const response: any = [];
+    
     studentsBelowThreshold.forEach(async student => {
       const subtopicsBelowThreshold = this.buildSubtopicsBelowThreshold(generalSubtopics, gradesByTopic.filter(grade => grade.userId === (student._id as any).toString()));
       const resourcesBySubtopic = this.buildResourcesBySubtopic(subtopicsBelowThreshold, generalResourcesBySubtopicIds);
-      const generated = await this.generateWithIa(builtTopic, subtopicsBelowThreshold, student.estilo || [], resourcesBySubtopic);
+      const generated = await this.generateWithIa(builtTopic, subtopicsBelowThreshold, student.estilo || [], resourcesBySubtopic, student.var || false);
       const data = {
         student: {
           id: (student._id as any).toString(),
           nombre: student.name,
           email: student.email,
           estilosDeAprendizaje: student.estilo,
+          variable: student.var,
         },
         topic: {
           id: (topic._id as any).toString(),
@@ -124,27 +128,45 @@ async findByStudentIdAndTopicId(id: string, topicId: string) {
           tipo: resource.tipo,
           dropbuxUrl: resource.dropboxUrl,
           descripcion: resource.descripcion,
+          resourcemode: resource.resourcemode,
         })),
         generated,
       };
       response.push(data);
       await this.academicSupportModel.create(data);
-      // Enviamos el mensaje cuando se genera el recurso
     });
     return response;
   }
 
-  async generateWithIa(topic: { id: string, materia: string, titulo: string }, subtopics: { id: string, titulo: string, nota: number, notaMaxima: number }[], estilosDeAprendizaje: string[], resourcesBySubtopic: { id: string, titulo: string, tipo: string, dropboxUrl: string, descripcion: string, subtema: string | null }[]) {
-    const prompt = this.buildPrompt(topic, subtopics, estilosDeAprendizaje, resourcesBySubtopic);
+  async generateWithIa(
+    topic: { id: string, materia: string, titulo: string },
+    subtopics: { id: string, titulo: string, nota: number, notaMaxima: number }[],
+    estilosDeAprendizaje: string[],
+    resourcesBySubtopic: { id: string, titulo: string, tipo: string, dropboxUrl: string, descripcion: string, subtema: string | null, resourcemode: boolean | false }[],
+    variable: boolean | false
+  ) {
+    const prompt = this.buildPrompt(topic, subtopics, estilosDeAprendizaje, resourcesBySubtopic, variable);
     return await this.langChainService.generate(prompt); // Esta respuesta viene en formato JSON
   }
 
+  buildPrompt(
+    tema: { id: string, materia: string, titulo: string },
+    subtemas: { id: string, titulo: string, nota: number, notaMaxima: number }[],
+    estilosDeAprendizaje: string[],
+    recursosDisponibles: { id: string, titulo: string, tipo: string, dropboxUrl: string, descripcion: string, subtema: string | null, resourcemode: boolean | false }[],
+    variable: boolean | false
+  ): string {
 
-  buildPrompt(tema: { id: string, materia: string, titulo: string }, subtemas: { id: string, titulo: string, nota: number, notaMaxima: number }[], estilosDeAprendizaje: string[], recursosDisponibles: { id: string, titulo: string, tipo: string, dropboxUrl: string, descripcion: string, subtema: string | null }[]): string {
+    // Filtrar los recursos según el valor de 'variable'
+    const recursosFiltrados = variable
+      ? recursosDisponibles.filter(resource => resource.resourcemode === true) // Si variable es true, solo los recursos con resourcemode true
+      : recursosDisponibles.filter(resource => resource.resourcemode !== true); // Si variable no es true, los recursos sin resourcemode true
+
     const prompt = `Eres un educador especializado en segundo año de bachillerato en Ecuador, experto en metodologías adaptadas a los estilos de aprendizaje según el cuestionario Honey-Alonso (CHAEA).
 
       Te proporcionaré la siguiente información:
       - Estilos de aprendizaje del estudiante.
+      - Si tiene un aprendizaje diferente.
       - Lista de subtemas que necesita reforzar.
       - Lista de recursos académicos disponibles (cada recurso incluye título, tipo, subtema relacionado y descripción).
 
@@ -155,7 +177,6 @@ async findByStudentIdAndTopicId(id: string, topicId: string) {
       4. Diseñar una **actividad de refuerzo** orientada **a la creación de un documento entregable**, que el estudiante pueda trabajar en casa y entregar al profesor como evidencia de su aprendizaje.
       5. Asegurar que la actividad tenga **complejidad media**, adecuada al nivel de segundo de bachillerato, sin ser excesivamente simple ni demasiado difícil.
       6. Describir los **pasos concretos** que debe seguir el estudiante para completar la tarea y crear su documento entregable.
-      
 
       **Importante**:
       - La actividad debe estar orientada exclusivamente a **un solo estudiante**.
@@ -176,50 +197,33 @@ async findByStudentIdAndTopicId(id: string, topicId: string) {
           // Puede haber más recursos
         ],
         "actividad_de_refuerzo": {
-          "descripcion_general": "Descripción general de la actividad enfocada en el refuerzo que va a optener.",
+          "descripcion_general": "Descripción general de la actividad enfocada en el refuerzo que va a obtener.",
           "pasos": [
             " Acción específica que debe realizar el estudiante.",
             " Acción específica que debe realizar el estudiante.",
             " Acción específica que debe realizar el estudiante.",
             " Tipo de documento que el estudiante debe crear y entregar.",
-            // Puede haber más pasos
           ],
         },
-        
       }
-        
+
       ## Reglas estrictas:
 
       - No agregar nada fuera del JSON (ni saludos, ni explicaciones, solo el JSON).
-
       - No dejar ningún campo vacío.
-
       - Seleccionar siempre al menos un recurso por subtema que debe reforzarse.
-
       - La descripción general y los pasos deben ser completamente claros para que el estudiante sepa qué debe hacer sin ayuda adicional.
-
       - La actividad debe terminar indicando que el estudiante debe entregar el documento al profesor.
 
       ## Datos de entrada:
 
       - Estilos de aprendizaje: ${JSON.stringify(estilosDeAprendizaje)}
-
+      - Si tiene un aprendizaje diferente: ${JSON.stringify(variable)}
       - Tema: ${JSON.stringify(tema)}
-
       - Subtemas: ${JSON.stringify(subtemas)}
+      - Recursos disponibles: ${JSON.stringify(recursosFiltrados)}
 
-      - Recursos disponibles: ${JSON.stringify(recursosDisponibles)}
-
-      ---
-
-      ## 📋 **Notas de optimización**:
-      - **Enfoque total** en **tarea en casa** → No en actividades grupales, orales, o de exposición. Siempre escritura + entrega.
-      - **Pasos detallados:** Cada paso debe ser súper concreto:  
-        ➔ "Lee el recurso X" → "Subraya las ideas principales" → "Redacta un resumen de una página en Word" → "Entrega en físico".
-      - **Objetivo claro:** Qué se busca reforzar con la actividad.
-
-      ---
-    `;
+      ---`;
 
     return prompt;
   }
@@ -234,19 +238,12 @@ async findByStudentIdAndTopicId(id: string, topicId: string) {
   }
 
   private buildSubtopicsBelowThreshold(subtopics: Subtopic[], gradesByUser: GradeDocument[]) {
-    // Inicializar un array donde se almacenarán los subtemas con calificaciones por debajo del máximo
     const subtopicsBelowThreshold: { id: string, titulo: string, nota: number, notaMaxima: number }[] = [];
 
-    // Iterar sobre cada GradeDocument (calificación por usuario)
     gradesByUser.forEach(gradeDoc => {
-      // Iterar sobre cada subtema en la calificación
       gradeDoc.subTopics.forEach(subTopic => {
-        // Buscar el subtema correspondiente en la lista de subtemas generales
         const subtopic = subtopics.find(st => st._id.toString() === subTopic.subTopicId);
-
-        // Si se encuentra el subtema y su calificación es menor al máximo
         if (subtopic && (subTopic.grade < subtopic.maxScore)) {
-          // Agregar el subtema con la calificación al resultado
           subtopicsBelowThreshold.push({
             id: subtopic._id.toString(),
             titulo: subtopic.name,
@@ -270,9 +267,8 @@ async findByStudentIdAndTopicId(id: string, topicId: string) {
         dropboxUrl: resource.dropboxUrl,
         descripcion: resource.description,
         subtema: subtopic ? subtopic.titulo : null,
+        resourcemode: resource.resourcemode,
       }
-    }
-    );
+    });
   }
-
 }

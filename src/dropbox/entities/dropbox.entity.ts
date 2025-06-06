@@ -26,6 +26,10 @@ export class Upload {
 
   @Prop({ required: true, enum: ['pdf', 'word', 'video', 'audio', 'image', 'pptx', 'other'] })
   fileType: string;
+
+  @Prop({ required: false})
+  resourcemode: boolean;
+  
 }
 
 export type UploadDocument = Upload & Document;

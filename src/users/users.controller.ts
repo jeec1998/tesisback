@@ -151,6 +151,7 @@ async obtenerMateriaUsuario(@Param('userId') userId: string) {
         correo: user.email,
         role: user.role,
         estilo: user.estilo,
+        var: user.var,
       },
     };
   }

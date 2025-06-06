@@ -62,6 +62,7 @@ export class DropboxService {
       topicId: body.topicId,
       subtopicId: body.subtopicId,
       fileType: body.fileType,
+      resourcemode: body.resourcemode,
     });
 
     return publicUrl;
