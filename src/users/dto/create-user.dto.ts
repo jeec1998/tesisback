@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, ValidateIf, IsArray, ArrayNotEmpty } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, ValidateIf, IsArray, ArrayNotEmpty, IsBoolean } from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
@@ -31,6 +31,10 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   estado?: string;
+   
+  @IsOptional()
+  @IsBoolean()
+  var: boolean;
 
   @ValidateIf(o => o.role === 'alumno')
   @IsArray()

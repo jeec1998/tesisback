@@ -28,6 +28,9 @@ export class Upload {
 
   @Prop({ required: true, enum: ['pdf', 'word', 'video', 'audio', 'mp3', 'image', 'pptx', 'other'] })
   fileType: string;  
+  
+  @Prop({ required: false })
+  resourcemode: boolean ;
 }
 
 export const UploadSchema = SchemaFactory.createForClass(Upload);

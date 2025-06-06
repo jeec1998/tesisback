@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsMongoId, IsString } from 'class-validator';
+import { IsNotEmpty, IsMongoId, IsString, IsBoolean } from 'class-validator';
 
 export class CreateUploadDto {
   @IsNotEmpty()
@@ -24,4 +24,8 @@ export class CreateUploadDto {
   @IsNotEmpty()
   @IsString()
   fileType: string;
+
+  @IsNotEmpty()
+  @IsBoolean()
+  resourcemode: boolean;
 }
