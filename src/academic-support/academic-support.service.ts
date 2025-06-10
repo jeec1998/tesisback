@@ -25,7 +25,7 @@ export class AcademicSupportService {
     private readonly subjectService: SubjectsService,
     private readonly uploadService: DropboxService,
     @InjectModel(AcademicSupport.name) private academicSupportModel: Model<AcademicSupportDocument>
-  ) {}
+  ) { }
 
   create(createAcademicSupportDto: CreateAcademicSupportDto) {
     return 'This action adds a new academicSupport';
@@ -89,7 +89,7 @@ export class AcademicSupportService {
     const studentsBelowThreshold = await this.userService.findManyByField('_id', filterGradesBelowThreshold.map(grade => new Types.ObjectId(grade.userId)));
     const generalResourcesBySubtopicIds = await this.uploadService.findManyBySubtopicIds(generalSubtopics.map(subtopic => subtopic._id.toString()));
     const response: any = [];
-    
+
     studentsBelowThreshold.forEach(async student => {
       const subtopicsBelowThreshold = this.buildSubtopicsBelowThreshold(generalSubtopics, gradesByTopic.filter(grade => grade.userId === (student._id as any).toString()));
       const resourcesBySubtopic = this.buildResourcesBySubtopic(subtopicsBelowThreshold, generalResourcesBySubtopicIds);
@@ -176,7 +176,7 @@ export class AcademicSupportService {
       3. Seleccionar los recursos que mejor se adapten a los estilos de aprendizaje del estudiante, priorizando los que permitan desarrollar una tarea individual y autónoma.
       4. Diseñar una **actividad de refuerzo** orientada **a la creación de un documento entregable**, que el estudiante pueda trabajar en casa y entregar al profesor como evidencia de su aprendizaje.
       5. Asegurar que la actividad tenga **complejidad media**, adecuada al nivel de segundo de bachillerato, sin ser excesivamente simple ni demasiado difícil.
-      6. Describir los **pasos concretos** que debe seguir el estudiante para completar la tarea y crear su documento entregable.
+      6. Describir los **pasos concretos** que debe seguir el estudiante para completar la tarea y crear su documento entregable no ingreses links .
 
       **Importante**:
       - La actividad debe estar orientada exclusivamente a **un solo estudiante**.
@@ -199,10 +199,12 @@ export class AcademicSupportService {
         "actividad_de_refuerzo": {
           "descripcion_general": "Descripción general de la actividad enfocada en el refuerzo que va a obtener.",
           "pasos": [
-            " Acción específica que debe realizar el estudiante.",
-            " Acción específica que debe realizar el estudiante.",
-            " Acción específica que debe realizar el estudiante.",
-            " Tipo de documento que el estudiante debe crear y entregar.",
+              "Acción específica que debe realizar el estudiante (puede haber más de una).",
+              "Otra acción concreta.",
+              "Acción adicional si es necesaria.",
+              "...",
+              "Tipo de documento que el estudiante debe crear y entregar al final."
+           
           ],
         },
       }

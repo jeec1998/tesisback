@@ -9,13 +9,7 @@ export class LangChainService {
         const model =
             configService.get<string>('OPENIA_MODEL_NAME') ?? '<model name>';
         const apiKey =
-            configService.get<string>('OPENIA_API_KEY') ?? '<api key>';
-
-                // Debug: verificar que las variables se están leyendo
-        console.log('API Key configurada:', apiKey ? 'Sí' : 'No');
-        console.log('Modelo configurado:', model);
-        console.log(apiKey)
-        
+            configService.get<string>('OPENIA_API_KEY') ?? '<api key>';        
         if (!apiKey || apiKey === '<api key>') {
             throw new Error('OPENAI_API_KEY no está configurada correctamente');
         }
