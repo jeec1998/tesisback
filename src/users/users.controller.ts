@@ -107,6 +107,23 @@ async createUserFromSubject(
   };
 }
 @UseGuards(AuthGuard('jwt'))
+@Get('alumnos')
+async findAlumnos() {
+  try {
+    // Filtramos usuarios por rol "alumno"
+    const alumnos = await this.usersService.findByRole('alumno');
+
+    if (!alumnos || alumnos.length === 0) {
+      throw new NotFoundException('No se encontraron alumnos');
+    }
+
+    return alumnos;
+  } catch (error) {
+    throw new BadRequestException('Error al obtener los alumnos', error.message);
+  }
+}
+
+@UseGuards(AuthGuard('jwt'))
 @Get(':userId/materia')
 async obtenerMateriaUsuario(@Param('userId') userId: string) {
   if (!Types.ObjectId.isValid(userId)) {
@@ -201,7 +218,84 @@ async obtenerMateriaUsuario(@Param('userId') userId: string) {
   
     return { message: 'Contraseña actualizada correctamente ✅' };
   }
-  
+  @UseGuards(AuthGuard('jwt'))
+  @Put(':userId/add-subjects')
+  async addSubjectsToUser(
+    @Param('userId') userId: string,
+    @Body() body: { subjectIds: string[] },
+    @Request() req,
+  ) {
+    // 1. Verificar permisos
+    const rol = req.user?.role;
+    if (rol === 'alumno') {
+      throw new UnauthorizedException('No tienes permiso para realizar esta acción.');
+    }
+
+    // 2. Validar los IDs
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('ID de usuario inválido.');
+    }
+    const { subjectIds } = body;
+    if (!subjectIds || !Array.isArray(subjectIds) || subjectIds.length === 0 || subjectIds.some(id => !Types.ObjectId.isValid(id))) {
+      throw new BadRequestException('Se requiere un array con al menos un ID de materia válido.');
+    }
+
+    // 3. Llamar al servicio para realizar la actualización en la base de datos
+    // El servicio debe encontrar al usuario y añadir los nuevos IDs al array `createbysubject`.
+    // Se recomienda usar el operador $addToSet de MongoDB para evitar duplicados.
+    const updatedUser = await this.usersService.addSubjectsToUser(userId, subjectIds);
+    
+    if (!updatedUser) {
+        throw new NotFoundException(`Usuario con ID ${userId} no encontrado.`);
+    }
+
+    return {
+      message: 'Materias añadidas correctamente al usuario.',
+      user: updatedUser,
+    };
+  }
+
+  // --- NUEVO MÉTODO DELETE PARA ELIMINAR UNA MATERIA ---
+  /**
+   * @description Elimina una materia del array `createbysubject` de un usuario.
+   * @param userId - El ID del usuario a actualizar.
+   * @param subjectId - El ID de la materia a eliminar.
+   * @route DELETE /users/:userId/remove-subject/:subjectId
+   * @access Protegido (JWT), solo para roles que no sean 'alumno'.
+   */
+  @UseGuards(AuthGuard('jwt'))
+  @Delete(':userId/remove-subject/:subjectId')
+  async removeSubjectFromUser(
+    @Param('userId') userId: string,
+    @Param('subjectId') subjectId: string,
+    @Request() req,
+  ) {
+    // 1. Verificar permisos
+    const rol = req.user?.role;
+    if (rol === 'alumno') {
+      throw new UnauthorizedException('No tienes permiso para realizar esta acción.');
+    }
+
+    // 2. Validar los IDs
+    if (!Types.ObjectId.isValid(userId) || !Types.ObjectId.isValid(subjectId)) {
+      throw new BadRequestException('ID de usuario o materia inválido.');
+    }
+
+    // 3. Llamar al servicio para realizar la actualización en la base de datos
+    // El servicio debe encontrar al usuario y eliminar el ID de la materia del array `createbysubject`.
+    // Se recomienda usar el operador $pull de MongoDB.
+    const updatedUser = await this.usersService.removeSubjectFromUser(userId, subjectId);
+
+    if (!updatedUser) {
+        throw new NotFoundException(`Usuario con ID ${userId} no encontrado o la materia no estaba asignada.`);
+    }
+    
+    return {
+      message: 'Materia eliminada correctamente del usuario.',
+      user: updatedUser,
+    };
+  }
+
   @Get()
   findAll() {
     return this.usersService.findAll();

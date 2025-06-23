@@ -26,6 +26,23 @@ export class GradeController {
       return { error: error.message };
     }
   }
+  @Get('user/:userId/subject/:subjectId')
+  findByUserAndSubject(
+    @Param('userId') userId: string,
+    @Param('subjectId') subjectId: string,
+  ) {
+    try {
+      // Asumimos que subjectId también es un ObjectId de MongoDB.
+      // Si no lo fuera, simplemente puedes pasar el string directamente.
+      const subjectObjectId = new Types.ObjectId(subjectId);
+
+      // Debes crear el método 'findByUserAndSubject' en tu GradeService.
+      return this.gradeService.findByUserAndSubject(userId, subjectObjectId);
+    } catch (error) {
+      // Captura errores, por ejemplo, si el formato de subjectId no es válido.
+      return { error: `Ocurrió un error al procesar la solicitud: ${error.message}` };
+    }
+  }
   @UseGuards(AuthGuard('jwt'))
   @Post()
   create(@Body() createGradeDto: CreateGradeDto) {

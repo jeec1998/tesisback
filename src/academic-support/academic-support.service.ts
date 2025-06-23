@@ -30,7 +30,17 @@ export class AcademicSupportService {
   create(createAcademicSupportDto: CreateAcademicSupportDto) {
     return 'This action adds a new academicSupport';
   }
-
+    async findByStudentAndSubject(studentId: string, subjectId: string): Promise<AcademicSupport[]> {
+    // CORRECCIÓN: La consulta ahora busca por 'student.id' y 'subject.id'
+    // Se utiliza find() para devolver todos los registros que coincidan.
+    return this.academicSupportModel.find({
+       $or: [
+        { _id: studentId },
+        { 'student.id': studentId },
+        { 'subject.id': subjectId },
+      ]
+    }).exec();
+  }
   findAll() {
     return `This action returns all academicSupport`;
   }
@@ -58,16 +68,19 @@ export class AcademicSupportService {
     }).exec();
   }
 
-  async findByStudentIdAndTopicId(id: string, topicId: string) {
+async findByStudentIdAndTopicId(studentId: string, topicId: string) {
+    // La consulta $or busca si el ID proporcionado coincide con el _id del documento
+    // o con el ID anidado dentro del objeto 'student'.
     return this.academicSupportModel.findOne({
       $and: [
-        {
-          $or: [
-            { _id: id },
-            { 'student.id': id },
-          ]
+        { 
+          // CORRECCIÓN: Se usa la notación de punto para el objeto anidado.
+          "student.id": studentId 
         },
-        { 'topic.id': topicId }
+        { 
+          // CORRECCIÓN: Se usa la notación de punto para el objeto anidado.
+          "topic.id": topicId 
+        }
       ]
     }).exec();
   }
@@ -89,11 +102,14 @@ export class AcademicSupportService {
     const studentsBelowThreshold = await this.userService.findManyByField('_id', filterGradesBelowThreshold.map(grade => new Types.ObjectId(grade.userId)));
     const generalResourcesBySubtopicIds = await this.uploadService.findManyBySubtopicIds(generalSubtopics.map(subtopic => subtopic._id.toString()));
     const response: any = [];
+    const subjectId = topic.subject._id ? topic.subject._id.toString() : topic.subject.toString();
 
     studentsBelowThreshold.forEach(async student => {
+      const subject = await this.subjectService.findOne(subjectId);
+      const subjectForIa = { id: (subject._id as Types.ObjectId | string).toString(), name: subject.name };
       const subtopicsBelowThreshold = this.buildSubtopicsBelowThreshold(generalSubtopics, gradesByTopic.filter(grade => grade.userId === (student._id as any).toString()));
       const resourcesBySubtopic = this.buildResourcesBySubtopic(subtopicsBelowThreshold, generalResourcesBySubtopicIds);
-      const generated = await this.generateWithIa(builtTopic, subtopicsBelowThreshold, student.estilo || [], resourcesBySubtopic, student.var || false);
+      const generated = await this.generateWithIa(subjectForIa, builtTopic, subtopicsBelowThreshold, student.estilo || [], resourcesBySubtopic, student.var || false);
       const data = {
         student: {
           id: (student._id as any).toString(),
@@ -102,6 +118,7 @@ export class AcademicSupportService {
           estilosDeAprendizaje: student.estilo,
           variable: student.var,
         },
+       
         topic: {
           id: (topic._id as any).toString(),
           materia: builtTopic.materia,
@@ -122,6 +139,10 @@ export class AcademicSupportService {
             })),
           })),
         },
+         subject: {
+          id: (subject._id as Types.ObjectId | string).toString(),
+          nombre: subject.name,
+        },
         resourcesBySubtopic: resourcesBySubtopic.map(resource => ({
           id: resource.id,
           titulo: resource.titulo,
@@ -139,17 +160,19 @@ export class AcademicSupportService {
   }
 
   async generateWithIa(
+    subject: { id: string, name: string },
     topic: { id: string, materia: string, titulo: string },
     subtopics: { id: string, titulo: string, nota: number, notaMaxima: number }[],
     estilosDeAprendizaje: string[],
     resourcesBySubtopic: { id: string, titulo: string, tipo: string, dropboxUrl: string, descripcion: string, subtema: string | null, resourcemode: boolean | false }[],
     variable: boolean | false
   ) {
-    const prompt = this.buildPrompt(topic, subtopics, estilosDeAprendizaje, resourcesBySubtopic, variable);
+    const prompt = this.buildPrompt(subject, topic, subtopics, estilosDeAprendizaje, resourcesBySubtopic, variable);
     return await this.langChainService.generate(prompt); // Esta respuesta viene en formato JSON
   }
 
   buildPrompt(
+    subject: { id: string, name: string },
     tema: { id: string, materia: string, titulo: string },
     subtemas: { id: string, titulo: string, nota: number, notaMaxima: number }[],
     estilosDeAprendizaje: string[],
