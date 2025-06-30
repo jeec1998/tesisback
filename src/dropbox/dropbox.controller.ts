@@ -1,4 +1,4 @@
-import { Controller, Post, UploadedFile, Body, UseInterceptors, Get, Query } from '@nestjs/common';
+import { Controller, Post, Put, Delete, UploadedFile, Body, UseInterceptors, Get, Query, Param } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { DropboxService } from './dropbox.service';
 import { CreateUploadDto } from './dto/create-dropbox.dto'; 
@@ -20,6 +20,21 @@ export class DropboxController {
     @Body() body: CreateUploadDto
   ) {
     return this.dropboxService.uploadFile(file, body);  // Lógica de subida de archivo
+  }
+
+  @Put('update/:id')
+  @UseInterceptors(FileInterceptor('file'))
+  async updateFile(
+    @Param('id') id: string, 
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: CreateUploadDto
+  ) {
+    return this.dropboxService.updateFile(id, file, body);  // Lógica de actualización de archivo
+  }
+
+  @Delete('delete/:id')
+  async deleteFile(@Param('id') id: string) {
+    return this.dropboxService.deleteFile(id);  // Lógica de eliminación de archivo
   }
 }
 
