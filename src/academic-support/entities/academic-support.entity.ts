@@ -12,7 +12,7 @@ export class AcademicSupport {
         email: string;
         estilosDeAprendizaje: string;
     };
-
+ 
     @Prop({ required: true, type: Object })
     topic: {
         id: string;
@@ -39,6 +39,11 @@ export class AcademicSupport {
 
     @Prop({ required: true, type: String })
     generated: string;
+       @Prop({ required: true, type: Object })
+    subject: {
+        id: string;
+        nombre: string;
+    };
 }
 
 export const AcademicSupportSchema = SchemaFactory.createForClass(AcademicSupport);

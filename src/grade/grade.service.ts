@@ -92,7 +92,22 @@ export class GradeService {
   async findByTopicId(topicId: Types.ObjectId): Promise<GradeDocument[]> {
     return this.gradeModel.find({ topicId: topicId.toString() }).exec();
   }
-
+ async findByUserAndSubject(userId: string, subjectId: Types.ObjectId): Promise<Grade[]> {
+    return this.gradeModel.find({
+      userId: userId,
+      subjectId: subjectId,
+    })
+    // CAMBIO CLAVE: Usamos .populate() para obtener los documentos completos.
+    .populate({
+        path: 'topicId', // Puebla el campo 'topicId'
+        select: 'titulo' // Selecciona solo el campo 'titulo' de Topic (y el _id por defecto)
+    })
+    .populate({
+        path: 'subTopics.subTopicId', // Puebla el campo anidado 'subTopicId' dentro del array 'subTopics'
+        select: 'titulo' // Selecciona solo el campo 'titulo' de SubTopic
+    })
+    .exec();
+  }
   buildListGroupedBySubtopics(grades: GradeDocument[]) {
     const data: GradeSubtopicData[] = [];
 

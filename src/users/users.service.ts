@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './entities/user.entity';
@@ -43,7 +43,49 @@ export class UsersService {
 
     return createdUser.save();
   }
+ async addSubjectsToUser(userId: string, subjectIds: string[]): Promise<User> {
+    const user = await this.userModel.findByIdAndUpdate(
+      userId,
+      { 
+        $addToSet: { 
+          createbysubject: { $each: subjectIds } 
+        } 
+      },
+      { new: true } // Devuelve el documento actualizado
+    ).exec();
+    
+    if (!user) {
+      throw new NotFoundException(`Usuario con ID ${userId} no encontrado.`);
+    }
 
+    return user;
+  }
+
+  // --- NUEVO MÉTODO PARA ELIMINAR UNA MATERIA ---
+  /**
+   * @description Elimina un ID de materia del array 'createbysubject' de un usuario.
+   * Utiliza $pull para remover el elemento específico.
+   * @param userId El ID del usuario.
+   * @param subjectId El ID de la materia a eliminar.
+   * @returns El usuario actualizado.
+   */
+  async removeSubjectFromUser(userId: string, subjectId: string): Promise<User> {
+    const user = await this.userModel.findByIdAndUpdate(
+      userId,
+      { 
+        $pull: { 
+          createbysubject: subjectId 
+        } 
+      },
+      { new: true } // Devuelve el documento actualizado
+    ).exec();
+
+    if (!user) {
+        throw new NotFoundException(`Usuario con ID ${userId} no encontrado.`);
+    }
+    
+    return user;
+  }
   findAll(): Promise<User[]> {
     return this.userModel.find().exec();
   }
@@ -92,7 +134,11 @@ export class UsersService {
   
     return this.userModel.findByIdAndUpdate(userId, { password: hashedPassword }, { new: true });
   }
-  
+  // En UsersService
+async findByRole(role: string) {
+  return this.userModel.find({ role }).exec();
+}
+
   async findManyByField(field: string, value: any): Promise<UserDocument[]> {
     return this.userModel.find({ [field]: value }).exec();
   }
