@@ -1,4 +1,4 @@
-import { ChatOpenAI } from "@langchain/openai";
+/* import { ChatOpenAI } from "@langchain/openai";
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -43,9 +43,9 @@ export class LangChainService {
 
         return '';
     }
-}
+} */
 //CODIGO PARA USAR GEMINI FREE 
-/* import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -85,4 +85,4 @@ export class LangChainService {
 
         return '';
     }
-} */
+} 
