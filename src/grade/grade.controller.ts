@@ -43,6 +43,22 @@ export class GradeController {
       return { error: `Ocurrió un error al procesar la solicitud: ${error.message}` };
     }
   }
+   // --- Nuevo método para obtener por userId y topicId ---
+  @Get('user/:userId/topic/:topicId')
+  async findByUserAndTopic(
+    @Param('userId') userId: string,
+    @Param('topicId') topicId: string,
+  ) {
+    try {
+      // Asegúrate de que topicId se convierte a ObjectId si es necesario
+      const topicObjectId = new Types.ObjectId(topicId);
+      return this.gradeService.findByUserAndTopic(userId, topicObjectId);
+    } catch (error) {
+      return { error: `Ocurrió un error al procesar la solicitud: ${error.message}` };
+    }
+  }
+  // --- Fin del nuevo método ---
+
   @UseGuards(AuthGuard('jwt'))
   @Post()
   create(@Body() createGradeDto: CreateGradeDto) {

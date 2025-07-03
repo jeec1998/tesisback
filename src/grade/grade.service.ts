@@ -132,6 +132,10 @@ export class GradeService {
 
     return data;
   }
+ 
+  async findByUserAndTopic(userId: string, topicId: Types.ObjectId): Promise<Grade[]> {
+    return this.gradeModel.find({ userId: userId, topicId: topicId }).exec();
+  }
 
 
   filterGradesBelowThreshold(grades: GradeDocument[]) {
