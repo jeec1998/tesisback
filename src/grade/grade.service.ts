@@ -147,4 +147,57 @@ export class GradeService {
       return grade.subTopics.some(subTopic => subTopic.grade < maxScore);
     });
   }
+  // En tu archivo: grade.service.ts
+// En tu archivo: grade.service.ts
+
+async createOrUpdate(createGradeDto: CreateGradeDto): Promise<any> {
+    const { userId, subjectId, topicId, subTopics } = createGradeDto;
+
+    // 1. Validamos que el front-end haya enviado calificaciones para procesar.
+    if (!subTopics || subTopics.length === 0) {
+        // Dependiendo de la lógica de negocio, puedes devolver un mensaje o un error.
+        return { message: "No se proporcionaron calificaciones para procesar." };
+    }
+
+    // 2. Calculamos la calificación total.
+    // IMPORTANTE: Estoy asumiendo que es la SUMA de las notas.
+    // Si es un promedio u otro cálculo, debes ajustar esta línea.
+    const totalGrade = subTopics.reduce((sum, current) => sum + current.grade, 0);
+
+    // 3. El filtro para encontrar el documento de calificación principal.
+    // Es único por la combinación de usuario y tema.
+    const filter = {
+        userId: userId,
+        topicId: topicId,
+    };
+
+    // 4. El objeto completo que se guardará.
+    // Esto sobreescribirá el documento existente con los datos más recientes.
+    const updatePayload = {
+        userId,
+        subjectId,
+        topicId,
+        subTopics, // Reemplazamos el array completo con el que llega del front-end.
+        totalGrade,
+    };
+
+    // 5. Las opciones para la operación de "upsert".
+    const options = {
+        upsert: true, // Crea el documento si no lo encuentra.
+        new: true,    // Devuelve el documento después de la actualización/creación.
+        setDefaultsOnInsert: true,
+    };
+
+    try {
+        // 6. Ejecutamos la operación. Mongoose se encarga de todo.
+        const result = await this.gradeModel.findOneAndUpdate(filter, updatePayload, options).exec();
+        
+        return {
+            message: `Calificaciones para el usuario ${userId} procesadas exitosamente.`,
+            data: result,
+        };
+    } catch (error) {
+        throw new Error(`Error al procesar las calificaciones: ${error.message}`);
+    }
+}
 }

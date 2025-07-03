@@ -59,10 +59,12 @@ export class GradeController {
   }
   // --- Fin del nuevo método ---
 
-  @UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'))
   @Post()
-  create(@Body() createGradeDto: CreateGradeDto) {
-    return this.gradeService.create(createGradeDto);
+  createOrUpdateGrades(@Body() createGradeDto: CreateGradeDto) {
+    // La lógica de 'upsert' se delega al servicio.
+    // El servicio ahora se llamará 'createOrUpdate' para mayor claridad.
+    return this.gradeService.createOrUpdate(createGradeDto);
   }
 
   @Patch(':id')
