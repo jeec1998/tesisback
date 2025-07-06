@@ -56,12 +56,19 @@ async getByUserAndTopic(
   remove(@Param('id') id: string) {
     return this.academicSupportService.remove(+id);
   }
-  @Get(':topicId/generate')
-  async generateWithIa(@Param('topicId') topicId: string) {
-    const response = await this.academicSupportService.generateByTopic(topicId);
+@Get(':topicId/generate')
+async generateWithIa(@Param('topicId') topicId: string) {
+  const response = await this.academicSupportService.generateByTopic(topicId);
+  
+  // Verifica si los datos fueron generados o si ya existen
+  if (response.message) {
+    return response;
+  } else {
     return {
-      message: 'Refuerzo académico generado',
+      message: 'Refuerzo académico generado con éxito',
       data: response,
     };
   }
+}
+
 }

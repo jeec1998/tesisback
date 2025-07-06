@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, ValidateIf, IsArray, ArrayNotEmpty, IsBoolean } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, ValidateIf, IsArray, ArrayNotEmpty, IsBoolean, validate } from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
@@ -39,9 +39,13 @@ export class CreateUserDto {
   @ValidateIf(o => o.role === 'alumno')
   @IsArray()
   @ArrayNotEmpty()
-  @IsEnum(['activo', 'reflexivo', 'teorico', 'pragmatico'], { each: true })
-  estilo: ('activo' | 'reflexivo' | 'teorico' | 'pragmatico')[];
+  @IsEnum(['activo', 'reflexivo', 'teórico', 'pragmático'], { each: true })
+  estilo: ('activo' | 'reflexivo' | 'teórico' | 'pragmático')[];
   
+  @ValidateIf(o => o.role === 'alumno')
+  @IsNotEmpty({ message: 'El campo nivel es obligatorio para alumnos' })
+  @IsString()
+  cursos?: string;
 
   @ValidateIf(o => o.role === 'alumno')
   @IsNotEmpty({ message: 'El campo createbysubject es obligatorio para alumnos' })

@@ -94,6 +94,16 @@ async findByStudentIdAndTopicId(studentId: string, topicId: string) {
   }
 
   async generateByTopic(topicId: string) {
+    // Verificar si ya existe información generada para el topicId
+  const existingSupport = await this.academicSupportModel.findOne({ "topic.id": topicId }).exec();
+
+  if (existingSupport) {
+    // Si ya hay datos generados para este topicId, devolver los datos existentes
+    return {
+      message: 'Ya se ha generado un refuerzo académico para este tema.',
+      data: existingSupport,
+    };
+  }
     const topic = await this.topicService.findOne(topicId);
     const builtTopic = await this.buildTopic(topic);
     const gradesByTopic = await this.gradeService.findByTopicId(new Types.ObjectId(topicId));
@@ -196,7 +206,7 @@ async findByStudentIdAndTopicId(studentId: string, topicId: string) {
       Tu tarea es:
       1. Analizar cuidadosamente los estilos de aprendizaje del estudiante.
       2. Leer todos los recursos disponibles.
-      3. Seleccionar los recursos que mejor se adapten a los estilos de aprendizaje del estudiante, priorizando los que permitan desarrollar una tarea individual y autónoma.
+      3. Seleccionar los recursos que mejor se adapten a los estilos de aprendizaje del estudiante, priorizando los que permitan desarrollar una tarea individual, autónoma y que cubran los subtemas en los que su calificacion es inferior al 80% de la maxima nota que puede sacar selecciona un recursos por cada subtema en el que esta mal y por cada estilo de aprendizaje .
       4. Diseñar una **actividad de refuerzo** orientada **a la creación de un documento entregable**, que el estudiante pueda trabajar en casa y entregar al profesor como evidencia de su aprendizaje.
       5. Asegurar que la actividad tenga **complejidad media**, adecuada al nivel de segundo de bachillerato, sin ser excesivamente simple ni demasiado difícil.
       6. Describir los **pasos concretos** que debe seguir el estudiante para completar la tarea y crear su documento entregable no ingreses links .

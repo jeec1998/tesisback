@@ -45,8 +45,39 @@ export class TopicsService {
   }
 
   async update(id: string, updateTopicDto: UpdateTopicDto): Promise<Topic> {
+    // Primero, recupera el tema existente para comparar los subtemas
+    const existingTopic = await this.topicModel.findById(id);
+
+    if (!existingTopic) {
+      throw new NotFoundException('Tema no encontrado');
+    }
+
+    // Mapear los _id existentes para una búsqueda rápida, asegurándose de convertirlos a string si no lo son
+    const existingSubtopicIds = new Set(
+      existingTopic.subtopics.map((sub) =>
+        sub._id ? sub._id.toString() : null // Usar .toString() para ObjectId, si es null o undefined, no agregarlo
+      ).filter(Boolean) // Elimina los nulls o undefineds
+    );
+
+    if (updateTopicDto.subtopics && updateTopicDto.subtopics.length > 0) {
+      updateTopicDto.subtopics = updateTopicDto.subtopics.map((newSubtopic) => {
+        // Convertir el _id del nuevo subtema a string para la comparación, si existe
+        const newSubtopicId = newSubtopic._id ? newSubtopic._id.toString() : null;
+
+        // Si el subtema no tiene un _id, o si tiene uno pero no existe en el tema original,
+        // le asignamos uno nuevo.
+        if (!newSubtopicId || !existingSubtopicIds.has(newSubtopicId)) {
+          newSubtopic._id = new Types.ObjectId().toHexString();
+        }
+        return newSubtopic;
+      });
+    }
+
     const topic = await this.topicModel.findByIdAndUpdate(id, updateTopicDto, {
       new: true,
+      // `overwrite: true` podría reemplazar completamente el array de subtemas.
+      // Si quieres un merge, la lógica manual es mejor.
+      // Aquí, se reemplazará el array `subtopics` por el que viene en `updateTopicDto`.
     }).populate('subject');
 
     if (!topic) {
@@ -55,7 +86,6 @@ export class TopicsService {
 
     return topic;
   }
-
   async remove(id: string): Promise<Topic> {
     const topic = await this.topicModel.findByIdAndDelete(id).populate('subject');
 

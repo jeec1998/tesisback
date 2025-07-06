@@ -26,16 +26,21 @@ export class User {
 
   @Prop({
     type: [String],
-    enum: ['activo', 'reflexivo', 'teorico', 'pragmatico'],
+    enum: ['activo', 'reflexivo', 'teórico', 'pragmático'],
     required: function (this: User) {
       return this.role === 'alumno';
     },
   })
-  estilo?: ('activo' | 'reflexivo' | 'teorico' | 'pragmatico')[];
+  estilo?: ('activo' | 'reflexivo' | 'teórico' | 'pragmático')[];
 
   @Prop({ required: true })
   telefono: string;
-
+   @Prop({
+    required: function (this: User) {
+      return this.role === 'alumno';
+    },
+  })
+  curso?: string;
   @Prop({
     required: function (this: User) {
       return this.role === 'alumno';
