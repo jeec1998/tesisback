@@ -1,4 +1,4 @@
-import { IsMongoId, IsNotEmpty, IsNumber, IsArray, IsString } from 'class-validator';
+import { IsMongoId, IsNotEmpty, IsNumber, IsArray, IsString, IsOptional } from 'class-validator';
 
 
 export class CreateGradeDto {
@@ -16,4 +16,9 @@ export class CreateGradeDto {
 
     @IsArray()
     subTopics: { subTopicId: string, grade: number }[];
+   
+  @IsNumber()
+  @IsOptional() // Porque puede que no siempre se envíe
+  totalRecoveryGrade?: number;
+
 }

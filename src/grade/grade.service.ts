@@ -89,9 +89,17 @@ export class GradeService {
     return deletedGrade;
   }
 
-  async findByTopicId(topicId: Types.ObjectId): Promise<GradeDocument[]> {
-    return this.gradeModel.find({ topicId: topicId.toString() }).exec();
-  }
+async findByTopicId(topicId: Types.ObjectId): Promise<any[]> {
+  // Asegurarte de que el campo 'totalRecoveryGrade' también esté en la consulta
+  const grades = await this.gradeModel.find({ topicId: topicId.toString() }).exec();
+
+  // Aquí también podrías modificar el proceso para devolver los valores correctos de 'totalRecoveryGrade'
+  return grades.map(grade => ({
+    ...grade.toObject(),
+    totalRecoveryGrade: grade.totalRecoveryGrade ?? undefined  // Incluir totalRecoveryGrade si existe, undefined si no
+  }));
+}
+
  async findByUserAndSubject(userId: string, subjectId: Types.ObjectId): Promise<Grade[]> {
     return this.gradeModel.find({
       userId: userId,
@@ -151,7 +159,7 @@ export class GradeService {
 // En tu archivo: grade.service.ts
 
 async createOrUpdate(createGradeDto: CreateGradeDto): Promise<any> {
-    const { userId, subjectId, topicId, subTopics } = createGradeDto;
+    const { userId, subjectId, topicId, subTopics,totalRecoveryGrade } = createGradeDto;
 
     // 1. Validamos que el front-end haya enviado calificaciones para procesar.
     if (!subTopics || subTopics.length === 0) {
@@ -179,6 +187,7 @@ async createOrUpdate(createGradeDto: CreateGradeDto): Promise<any> {
         topicId,
         subTopics, // Reemplazamos el array completo con el que llega del front-end.
         totalGrade,
+        totalRecoveryGrade, // Agregamos el campo de recuperación si se envía.
     };
 
     // 5. Las opciones para la operación de "upsert".
@@ -200,4 +209,17 @@ async createOrUpdate(createGradeDto: CreateGradeDto): Promise<any> {
         throw new Error(`Error al procesar las calificaciones: ${error.message}`);
     }
 }
+async findRecoveryGradesByTopicId(topicId: Types.ObjectId): Promise<any[]> {
+  // Buscar todas las calificaciones relacionadas con el topicId
+  const grades = await this.gradeModel.find({ topicId: topicId.toString() }).exec();
+
+  // Extraer solo las calificaciones de recuperación (totalRecoveryGrade)
+  const recoveryGrades = grades.map(grade => ({
+    userId: grade.userId,
+    totalRecoveryGrade: grade.totalRecoveryGrade || null  // Solo devolver el totalRecoveryGrade
+  }));
+
+  return recoveryGrades;
+}
+
 }

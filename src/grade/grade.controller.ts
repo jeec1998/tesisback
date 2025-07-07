@@ -83,4 +83,15 @@ export class GradeController {
     const gradesByTopic = await this.gradeService.findByTopicId(new Types.ObjectId(topicId));
     return this.gradeService.buildListGroupedBySubtopics(gradesByTopic);
   }
+  @UseGuards(AuthGuard('jwt'))
+@Get('topic/:topicId/recovery')
+async findRecoveryGrades(@Param('topicId') topicId: string) {
+  try {
+    const recoveryGrades = await this.gradeService.findRecoveryGradesByTopicId(new Types.ObjectId(topicId));
+    return recoveryGrades;
+  } catch (error) {
+    return { error: `Ocurrió un error al procesar la solicitud: ${error.message}` };
+  }
+}
+
 }
