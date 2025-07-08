@@ -70,5 +70,13 @@ async generateWithIa(@Param('topicId') topicId: string) {
     };
   }
 }
+@Get('topic/:topicId/exists')
+  async topicExists(@Param('topicId') topicId: string) {
+    if (!Types.ObjectId.isValid(topicId)) {
+      throw new BadRequestException('El ID del tópico proporcionado no es válido.');
+    }
+    const exists = await this.academicSupportService.checkTopicExists(topicId);
+    return { exists };
+  }
 
 }

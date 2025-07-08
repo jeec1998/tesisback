@@ -26,7 +26,18 @@ export class AcademicSupportService {
     private readonly uploadService: DropboxService,
     @InjectModel(AcademicSupport.name) private academicSupportModel: Model<AcademicSupportDocument>
   ) { }
+async checkTopicExists(topicId: string): Promise<boolean> {
+  // Usamos "dot notation" para buscar dentro del objeto anidado "topic".
+  // Comparamos el string 'topicId' directamente con el campo 'topic.id'.
+  const support = await this.academicSupportModel
+    .findOne({ "topic.id": topicId }) // <--- ¡AQUÍ ESTÁ LA CORRECCIÓN!
+    .select('_id')
+    .lean()
+    .exec();
 
+  // Si se encuentra un documento, 'support' no será null.
+  return !!support;
+}
   create(createAcademicSupportDto: CreateAcademicSupportDto) {
     return 'This action adds a new academicSupport';
   }
